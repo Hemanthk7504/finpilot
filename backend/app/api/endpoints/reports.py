@@ -11,7 +11,6 @@ from backend.app.models.user import User
 from backend.app.models.goal import Goal
 from backend.app.models.budget import Budget
 from backend.app.models.alert import Alert
-from backend.app.services.data_seeder import seed_sample_transactions, seed_database_if_empty
 from backend.app.services.health_scoring import health_scoring_engine
 from backend.app.services.forecaster import cash_flow_forecaster
 
@@ -80,23 +79,9 @@ def get_report_summary(
         "anomalies_count": len(anomalies)
     }
 
-@router.post("/reset-demo")
-def reset_demo_data(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Reset transactions, budgets, goals, and reload realistic seed data."""
-    target_id = current_user.id if current_user else settings.DEMO_USER_ID
-    db.query(Transaction).filter(Transaction.user_id == target_id).delete()
-    db.query(Alert).filter(Alert.user_id == target_id).delete()
-    db.commit()
-
-    seed_sample_transactions(db, target_id)
-    return {"message": "Demo financial dataset successfully refreshed with new transactions, anomalies, and recurring patterns."}
-
 @router.get("/download-sample-statement")
 def download_sample_csv():
-    """Download the sample bank statement CSV file."""
+    """Download the sample bank statement CSV file for testing statement ingestion."""
     csv_path = os.path.join("backend", "data", "sample_statements", "sample_bank_statement.csv")
     if os.path.exists(csv_path):
         return FileResponse(csv_path, media_type="text/csv", filename="FinPilot_Sample_Bank_Statement.csv")

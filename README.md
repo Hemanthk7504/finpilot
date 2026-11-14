@@ -18,9 +18,9 @@ Combining **Machine Learning**, **Predictive Analytics**, **Unsupervised Anomaly
 ### 2. 🔐 Complete Authentication & Multi-User Isolation System
 - **JWT-Based Authentication**: Secure RFC-7519 tokens signed with HMAC-SHA256 and expiration.
 - **PBKDF2-HMAC-SHA256 Password Hashing**: 100,000 hashing rounds with unique cryptographic per-user salts.
-- **⚡ 1-Click Instant Demo Access**: One-click sign in as `Alex Mercer` (`alex.mercer@finpilot.io`) with 3 months of preloaded bank statements, budgets, goals, and detected anomalies.
-- **Full Account Registration & Sign In**: Self-service registration (`POST /api/v1/auth/register`) automatically initializes personalized budgets, default goals, and an isolated financial ledger.
+- **Full Account Registration & Sign In**: Self-service registration (`POST /api/v1/auth/register`) automatically initializes personalized budgets, default goals, and an isolated financial ledger for each user.
 - **User Profile Management**: `GET /api/v1/auth/me` and session persistence in `localStorage`.
+- **Dedicated Top Navigation Bar**: Comprehensive navigation with real user profiles, view switchers, statement importer, and session sign-out.
 
 ### 3. 📑 Intelligent Bank Statement Parsing & Ingestion
 - Ingests **CSV** and **PDF** bank statements with dynamic column identification.
@@ -169,16 +169,17 @@ npm run dev -- --port 9000
 
 ---
 
-## 🔑 Authentication User Flow
+## 🔑 User Authentication & Onboarding Flow
 
 1. **Guest Experience**:
-   - Visitors land on the **Dedicated Home Page** with interactive simulations, feature showcases, and privacy specifications.
-2. **Instant Demo Login**:
-   - Click **"⚡ Quick Demo"** or **"Demo Sign In"** to instantly authenticate as `Alex Mercer` with 3 months of pre-populated bank statements, anomalies, and budgets.
-3. **New User Registration**:
-   - Click **"Sign In"** -> **"Create Account"** to register with your name, email, password, and estimated monthly income. FinPilot automatically generates an isolated personal ledger, sets up initial 50/30/20 category envelopes, and issues a secure JWT token.
-4. **Session Persistence**:
-   - Tokens are safely maintained in client storage with automatic bearer authorization attached to all backend requests.
+   - Visitors land on the **Dedicated Home Page** with interactive wealth simulations, engine showcases, and privacy specifications.
+   - Header navigation provides instant access to Capabilities, Wealth Simulator, Comparison, and Security.
+2. **New User Registration & Account Creation**:
+   - Click **"Get Started Free"** or **"Sign In"** -> **"Create Account"** to register with your name, email, password, and estimated monthly net income. FinPilot automatically generates an isolated personal ledger, sets up initial 50/30/20 category envelopes, and issues a secure JWT token.
+3. **Secure Sign In & Session Persistence**:
+   - Sign in with your registered email and password. Tokens are maintained securely in client storage with automatic bearer authorization headers attached to all backend requests.
+4. **Statement Import & Workspace**:
+   - Use the **"Import Statement"** button in the executive navbar to upload your real CSV or PDF bank statements for immediate classification and health score computation.
 
 ---
 

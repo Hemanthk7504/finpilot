@@ -111,32 +111,6 @@ def login(login_in: UserLogin, db: Session = Depends(get_db)):
         user=UserResponse.model_validate(user)
     )
 
-@router.post("/demo-login", response_model=TokenResponse)
-def demo_login(db: Session = Depends(get_db)):
-    """One-click instant login as the demo account Alex Mercer."""
-    user = db.query(User).filter(User.id == settings.DEMO_USER_ID).first()
-    if not user:
-        # Create demo user if missing
-        user = User(
-            id=settings.DEMO_USER_ID,
-            name=settings.DEMO_USER_NAME,
-            email=settings.DEMO_USER_EMAIL,
-            hashed_password=hash_password("demo1234"),
-            currency=settings.DEFAULT_CURRENCY,
-            monthly_income=6500.0,
-            risk_profile="Balanced"
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-
-    token = create_access_token({"sub": user.id, "email": user.email})
-    return TokenResponse(
-        access_token=token,
-        token_type="bearer",
-        user=UserResponse.model_validate(user)
-    )
-
 @router.get("/me", response_model=UserResponse)
 def get_current_user_profile(user: User = Depends(get_current_user)):
     """Retrieve currently authenticated user profile."""

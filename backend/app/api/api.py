@@ -3,6 +3,11 @@ from backend.app.api.endpoints import auth, transactions, analytics, health_scor
 
 api_router = APIRouter()
 
+@api_router.get("/health", tags=["System"])
+def api_health():
+    return {"status": "healthy", "service": "FinPilot MAX API v1"}
+
+
 api_router.include_router(auth.router, prefix="/auth", tags=["Authentication & User Management"])
 api_router.include_router(transactions.router, prefix="/transactions", tags=["Transactions & Statements"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics & Forecast"])

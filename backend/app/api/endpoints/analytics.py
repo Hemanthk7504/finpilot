@@ -269,3 +269,244 @@ def get_anomalies(
         }
         for t in txns
     ]
+
+@router.get("/safe-to-spend")
+def get_safe_to_spend(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Real-time daily safe-to-spend pace and runway calculation until next income credit."""
+    user = current_user
+    income = user.monthly_income if user else 6500.0
+    now = datetime.utcnow()
+    
+    # Days until end of month or next pay cycle
+    day_of_month = now.day
+    days_in_month = 30
+    days_remaining = max(1, days_in_month - day_of_month)
+    
+    # Get all liquid balance
+    all_credits = db.query(Transaction).filter(Transaction.user_id == user.id, Transaction.type == "credit").all()
+    all_debits = db.query(Transaction).filter(Transaction.user_id == user.id, Transaction.type == "debit").all()
+    liquid_balance = max(1500.0, sum(t.amount for t in all_credits) - sum(t.amount for t in all_debits))
+    
+    # Estimate upcoming committed recurring bills in next days_remaining
+    recurring_txns = db.query(Transaction).filter(
+        Transaction.user_id == user.id,
+        Transaction.is_recurring == True,
+        Transaction.type == "debit"
+    ).all()
+    
+    committed_bills = sum(t.amount for t in recurring_txns if t.date.day > day_of_month)
+    if committed_bills == 0 and len(recurring_txns) > 0:
+        committed_bills = sum(t.amount for t in recurring_txns) * (days_remaining / 30.0)
+    
+    emergency_buffer = min(1000.0, liquid_balance * 0.15)
+    uncommitted_funds = max(0.0, liquid_balance - committed_bills - emergency_buffer)
+    daily_allowance = round(uncommitted_funds / days_remaining, 2)
+    
+    # Status pacing
+    if daily_allowance > 120.0:
+        status = "Comfortable"
+        badge_color = "emerald"
+    elif daily_allowance >= 50.0:
+        status = "On Track"
+        badge_color = "indigo"
+    else:
+        status = "Tight Budget"
+        badge_color = "amber"
+        
+    return {
+        "daily_allowance": daily_allowance,
+        "days_remaining": days_remaining,
+        "liquid_balance": round(liquid_balance, 2),
+        "committed_bills": round(committed_bills, 2),
+        "emergency_buffer": round(emergency_buffer, 2),
+        "uncommitted_funds": round(uncommitted_funds, 2),
+        "status": status,
+        "badge_color": badge_color,
+        "next_paycheck_estimate": f"{days_remaining} days away"
+    }
+
+@router.post("/what-if")
+def simulate_what_if_scenario(
+    payload: Dict[str, Any],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Interactive What-If financial scenario sandbox simulator."""
+    user = current_user
+    base_income = user.monthly_income if user else 6500.0
+    
+    discretionary_cut_pct = float(payload.get("discretionary_cut_pct", 0.0))
+    additional_monthly_savings = float(payload.get("additional_monthly_savings", 0.0))
+    windfall_one_time = float(payload.get("windfall_one_time", 0.0))
+    extra_income_monthly = float(payload.get("extra_income_monthly", 0.0))
+    
+    # Current monthly debit spend
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    txns = db.query(Transaction).filter(
+        Transaction.user_id == user.id,
+        Transaction.date >= thirty_days_ago,
+        Transaction.type == "debit"
+    ).all()
+    
+    cat_spending = {}
+    for t in txns:
+        cat_spending[t.category_name] = cat_spending.get(t.category_name, 0.0) + t.amount
+        
+    total_debit = sum(cat_spending.values()) or 4200.0
+    
+    # Calculate simulated discretionary reduction
+    discretionary_cats = ["Dining & Food Delivery", "Shopping & Electronics", "Entertainment & Subscriptions", "Travel & Lodging"]
+    simulated_cat_spending = dict(cat_spending)
+    saved_from_cuts = 0.0
+    for cat in discretionary_cats:
+        if cat in simulated_cat_spending:
+            reduction = simulated_cat_spending[cat] * (discretionary_cut_pct / 100.0)
+            simulated_cat_spending[cat] -= reduction
+            saved_from_cuts += reduction
+            
+    simulated_income = base_income + extra_income_monthly
+    simulated_total_expense = max(1000.0, total_debit - saved_from_cuts)
+    simulated_monthly_savings = max(0.0, (simulated_income - simulated_total_expense) + additional_monthly_savings)
+    simulated_savings_rate = min(95.0, round((simulated_monthly_savings / simulated_income) * 100.0, 1))
+    
+    # Re-compute health score with simulated parameters
+    all_credits = db.query(Transaction).filter(Transaction.user_id == user.id, Transaction.type == "credit").all()
+    all_debits = db.query(Transaction).filter(Transaction.user_id == user.id, Transaction.type == "debit").all()
+    current_bal = sum(t.amount for t in all_credits) - sum(t.amount for t in all_debits)
+    simulated_balance = max(2000.0, current_bal + windfall_one_time + simulated_monthly_savings)
+    
+    budgets = {b.category_name: b.monthly_limit for b in db.query(Budget).filter(Budget.user_id == user.id).all()}
+    
+    sim_health = health_scoring_engine.compute(
+        monthly_income=simulated_income,
+        monthly_expense=simulated_total_expense,
+        category_spending=simulated_cat_spending,
+        budgets=budgets,
+        savings_balance=simulated_balance,
+        debt_payments=cat_spending.get("Loans & Debt EMI", 320.0)
+    )
+    
+    # 1-year and 5-year wealth impact (assuming 8% p.a. compound growth on extra savings)
+    r = 0.08 / 12
+    extra_monthly = saved_from_cuts + additional_monthly_savings + extra_income_monthly
+    fv_1yr = windfall_one_time * (1 + 0.08) + (extra_monthly * (( (1 + r)**12 - 1 ) / r) if extra_monthly > 0 else 0)
+    fv_5yr = windfall_one_time * ((1 + 0.08)**5) + (extra_monthly * (( (1 + r)**60 - 1 ) / r) if extra_monthly > 0 else 0)
+    
+    return {
+        "simulated_monthly_savings": round(simulated_monthly_savings, 2),
+        "monthly_savings_increase": round(extra_monthly, 2),
+        "simulated_savings_rate": simulated_savings_rate,
+        "simulated_health_score": sim_health["total_score"],
+        "simulated_health_grade": sim_health["grade"],
+        "projected_1yr_wealth_gain": round(fv_1yr, 2),
+        "projected_5yr_wealth_gain": round(fv_5yr, 2),
+        "discretionary_savings": round(saved_from_cuts, 2)
+    }
+
+@router.get("/tax-deductions")
+def get_tax_deductions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Autonomous scanner identifying potential tax write-offs and deductible expenditures."""
+    txns = db.query(Transaction).filter(
+        Transaction.user_id == current_user.id,
+        Transaction.type == "debit"
+    ).all()
+    
+    deductible_categories = {
+        "Healthcare & Medical": {"section": "Medical & Dental (IRS Schedule A)", "tax_saving_pct": 0.24},
+        "Charity & Donations": {"section": "Charitable Contributions (501c3)", "tax_saving_pct": 0.30},
+        "Utilities & Bills": {"section": "Home Office Deduction (Portion)", "tax_saving_pct": 0.20},
+        "Shopping & Electronics": {"section": "Qualified Tech & Business Equipment (Sec 179)", "tax_saving_pct": 0.22},
+        "Education & Books": {"section": "Lifetime Learning & Professional Dev", "tax_saving_pct": 0.25}
+    }
+    
+    deductibles = []
+    total_deductible = 0.0
+    
+    for t in txns:
+        cat = t.category_name
+        if cat in deductible_categories:
+            rule = deductible_categories[cat]
+            # Portion deductible
+            factor = 0.5 if cat in ["Utilities & Bills", "Shopping & Electronics"] else 1.0
+            qualifying_amount = round(t.amount * factor, 2)
+            est_tax_saved = round(qualifying_amount * rule["tax_saving_pct"], 2)
+            total_deductible += qualifying_amount
+            deductibles.append({
+                "id": t.id,
+                "date": t.date.strftime("%Y-%m-%d"),
+                "merchant": t.clean_merchant,
+                "category": cat,
+                "original_amount": t.amount,
+                "deductible_amount": qualifying_amount,
+                "irs_section": rule["section"],
+                "estimated_tax_savings": est_tax_saved
+            })
+            
+    return {
+        "total_deductible_amount": round(total_deductible, 2),
+        "estimated_total_tax_savings": round(total_deductible * 0.24, 2),
+        "item_count": len(deductibles),
+        "deductions": deductibles[:15]
+    }
+
+@router.get("/net-worth-trend")
+def get_net_worth_trend(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Daily cumulative Net Worth and Asset distribution trajectory for the last 90 days."""
+    all_txns = db.query(Transaction).filter(
+        Transaction.user_id == current_user.id
+    ).order_by(Transaction.date.asc()).all()
+    
+    if not all_txns:
+        return {"trend": []}
+        
+    records = []
+    for t in all_txns:
+        records.append({
+            "date": t.date.strftime("%Y-%m-%d"),
+            "amount": t.amount,
+            "type": t.type,
+            "category": t.category_name
+        })
+        
+    df = pd.DataFrame(records)
+    daily_trend = []
+    
+    # Running tracking
+    running_cash = 3500.0
+    running_investments = 8500.0
+    running_debt = 2400.0
+    
+    grouped = df.groupby("date")
+    for date_str, group in grouped:
+        for _, row in group.iterrows():
+            amt = float(row["amount"])
+            if row["type"] == "credit":
+                running_cash += amt
+            elif row["category"] == "Investments & Savings":
+                running_cash -= amt
+                running_investments += amt * 1.002 # slight appreciation
+            elif row["category"] == "Loans & Debt EMI":
+                running_cash -= amt
+                running_debt = max(0.0, running_debt - amt * 0.8) # principal reduction
+            else:
+                running_cash -= amt
+                
+        net_worth = running_cash + running_investments - running_debt
+        daily_trend.append({
+            "date": date_str,
+            "cash": round(max(500.0, running_cash), 2),
+            "investments": round(running_investments, 2),
+            "debt": round(running_debt, 2),
+            "net_worth": round(max(1000.0, net_worth), 2)
+        })
+        
+    return {"trend": daily_trend}

@@ -75,26 +75,16 @@ export async function registerUser(userData) {
   return data;
 }
 
-export async function demoLogin() {
-  const res = await fetch(`${API_BASE}/auth/demo-login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || "Demo login failed.");
-  }
-  const data = await res.json();
-  setStoredToken(data.access_token);
-  setStoredUser(data.user);
-  return data;
-}
-
 export async function getCurrentUser() {
+  const token = getStoredToken();
+  if (!token) return null;
   const res = await fetch(`${API_BASE}/auth/me`, {
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error("Not authenticated");
+  if (!res.ok) {
+    logoutUser();
+    return null;
+  }
   const user = await res.json();
   setStoredUser(user);
   return user;
@@ -233,15 +223,6 @@ export async function sendChatMessage(message, history = []) {
     body: JSON.stringify({ message, history }),
   });
   if (!res.ok) throw new Error("Failed to send chat message");
-  return res.json();
-}
-
-export async function resetDemoData() {
-  const res = await fetch(`${API_BASE}/reports/reset-demo`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-  });
-  if (!res.ok) throw new Error("Failed to reset demo dataset");
   return res.json();
 }
 

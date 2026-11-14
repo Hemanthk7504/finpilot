@@ -162,8 +162,10 @@ export default function TransactionTable({ transactions = [], onUpdateCategory }
               })
             ) : (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-slate-400">
-                  No transactions match your current filters.
+                <td colSpan={5} className="py-10 text-center text-slate-400">
+                  {transactions.length === 0
+                    ? "No transactions recorded yet in this account. Click 'Import Statement' in the navigation bar to upload your bank statement."
+                    : "No transactions match your current filters."}
                 </td>
               </tr>
             )}
