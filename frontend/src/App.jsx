@@ -13,6 +13,7 @@ import InvestmentGuidance from "./components/InvestmentGuidance";
 import TransactionTable from "./components/TransactionTable";
 import AICoPilotDrawer from "./components/AICoPilotDrawer";
 import ReportsModal from "./components/ReportsModal";
+import SalaryModal from "./components/SalaryModal";
 
 import {
   fetchOverview,
@@ -52,6 +53,7 @@ export default function App() {
   // Modals & Panels
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState("login");
+  const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -124,6 +126,10 @@ export default function App() {
     setCurrentUser(user);
     loadAllData();
     navigateView("dashboard");
+    // Prompt real user to configure salary after login if not already configured
+    if (!user.monthly_income || user.monthly_income <= 0) {
+      setTimeout(() => setIsSalaryModalOpen(true), 400);
+    }
   };
 
   const handleLogout = () => {
@@ -137,14 +143,6 @@ export default function App() {
     setIsAuthModalOpen(true);
   };
 
-  const navTabs = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "forecast", label: "Predictive Forecast", icon: TrendingUp },
-    { id: "health-score", label: "Health Score", icon: ShieldCheck },
-    { id: "budgets-goals", label: "Budgets & Goals", icon: Target },
-    { id: "investments", label: "Investment Guidance", icon: LineChart },
-    { id: "ledger", label: "Transactions", icon: ListOrdered },
-  ];
 
   return (
     <div className="min-h-screen bg-[#080C14] text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
@@ -170,33 +168,37 @@ export default function App() {
             onOpenChat={() => setIsChatOpen(true)}
             onOpenReport={() => setIsReportOpen(true)}
             onOpenUpload={() => setIsUploadModalOpen(true)}
+            onOpenSalaryModal={() => setIsSalaryModalOpen(true)}
             onOpenAuth={() => openAuthWithMode("login")}
             onLogout={handleLogout}
           />
 
-          {/* Main Dashboard Workspace */}
-          <main className="flex-1 mx-auto max-w-7xl w-full px-4 sm:px-6 py-6 space-y-6">
-            {/* Secondary Mobile Tabs Bar */}
-            <div className="lg:hidden border-b border-slate-800/80 pb-3 flex items-center overflow-x-auto no-scrollbar gap-1.5">
-              {navTabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeDashboardTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveDashboardTab(tab.id)}
-                    className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
-                      isActive
-                        ? "bg-indigo-600 text-white shadow-sm"
-                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
-                    }`}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+          {/* Main Dashboard Workspace (Full Screen Width) */}
+          <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 xl:px-12 py-6 space-y-6">
+            {/* Real-time salary configuration banner if user has not set it yet */}
+            {currentUser && (!currentUser.monthly_income || currentUser.monthly_income <= 0) && (
+              <div className="rounded-2xl border border-indigo-500/40 bg-gradient-to-r from-indigo-950/60 via-slate-900/90 to-cyan-950/60 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 shrink-0">
+                    <DollarSign className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Add Your Monthly Net Salary</h4>
+                    <p className="text-xs text-slate-400">
+                      Enter your take-home monthly salary to calibrate personalized 50/30/20 budgets, savings targets, and health score benchmarks.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsSalaryModalOpen(true)}
+                  className="shrink-0 flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-5 py-2.5 shadow-md shadow-indigo-600/30 transition hover:scale-105 active:scale-95"
+                >
+                  <span>Add Salary Details</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+
 
             {/* Global KPIs (always visible for financial clarity) */}
             <KPIOverview overview={overview} anomaliesCount={anomalies.length} />
@@ -397,6 +399,17 @@ export default function App() {
         onClose={() => setIsAuthModalOpen(false)}
         onAuthSuccess={handleAuthSuccess}
       />
+
+      <SalaryModal
+        isOpen={isSalaryModalOpen}
+        currentUser={currentUser}
+        onClose={() => setIsSalaryModalOpen(false)}
+        onSalaryUpdated={(updated) => {
+          setCurrentUser(updated);
+          loadAllData();
+        }}
+      />
+
 
       {isUploadModalOpen && (
         <StatementUploader

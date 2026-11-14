@@ -7,10 +7,50 @@ from backend.app.core.security import hash_password, verify_password, create_acc
 from backend.app.models.user import User
 from backend.app.models.budget import Budget
 from backend.app.models.goal import Goal
-from backend.app.schemas.schemas import UserRegister, UserLogin, UserResponse, TokenResponse
+from backend.app.schemas.schemas import UserRegister, UserLogin, UserResponse, TokenResponse, UpdateSalaryRequest
 from backend.app.api.deps import get_current_user
 
 router = APIRouter()
+
+@router.put("/salary", response_model=UserResponse)
+def update_user_salary(
+    payload: UpdateSalaryRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update user monthly salary and recalibrate 50/30/20 budgets."""
+    current_user.monthly_income = payload.monthly_income
+    if payload.currency:
+        current_user.currency = payload.currency
+
+    # Recalibrate default budget limits to new salary
+    sample_budgets = {
+        "Housing & Rent": current_user.monthly_income * 0.30,
+        "Groceries": min(800.0, current_user.monthly_income * 0.10),
+        "Utilities & Bills": min(400.0, current_user.monthly_income * 0.05),
+        "Dining & Food Delivery": min(500.0, current_user.monthly_income * 0.06),
+        "Shopping & Electronics": min(500.0, current_user.monthly_income * 0.06),
+        "Entertainment & Subscriptions": min(200.0, current_user.monthly_income * 0.03),
+        "Transportation & Fuel": min(400.0, current_user.monthly_income * 0.05),
+        "Investments & Savings": current_user.monthly_income * 0.15,
+        "Loans & Debt EMI": current_user.monthly_income * 0.08
+    }
+    for cat_name, limit in sample_budgets.items():
+        b = db.query(Budget).filter(Budget.user_id == current_user.id, Budget.category_name == cat_name).first()
+        if b:
+            b.monthly_limit = round(limit, 2)
+        else:
+            db.add(Budget(
+                user_id=current_user.id,
+                category_name=cat_name,
+                monthly_limit=round(limit, 2),
+                period="monthly"
+            ))
+
+    db.commit()
+    db.refresh(current_user)
+    return UserResponse.model_validate(current_user)
+
 
 @router.post("/register", response_model=TokenResponse)
 def register(user_in: UserRegister, db: Session = Depends(get_db)):

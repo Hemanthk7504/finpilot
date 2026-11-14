@@ -130,7 +130,7 @@ export default function HomePage({ onLaunchApp, onOpenAuth, currentUser }) {
 
       {/* TOP NAVIGATION BAR */}
       <header className="sticky top-0 z-50 w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+        <div className="w-full flex items-center justify-between px-4 sm:px-6 lg:px-10 xl:px-16 py-3">
           {/* Brand */}
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 shadow-md shadow-indigo-500/25">
@@ -145,7 +145,7 @@ export default function HomePage({ onLaunchApp, onOpenAuth, currentUser }) {
           </div>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-300">
+          <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-slate-300">
             <a href="#features" className="hover:text-indigo-400 transition">
               Capabilities
             </a>
@@ -179,7 +179,7 @@ export default function HomePage({ onLaunchApp, onOpenAuth, currentUser }) {
               <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   onClick={() => onOpenAuth("login")}
-                  className="rounded-xl border border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-200 font-semibold text-xs px-3.5 py-2 transition"
+                  className="rounded-xl border border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-200 font-semibold text-xs px-4 py-2 transition"
                 >
                   Sign In
                 </button>
@@ -196,7 +196,7 @@ export default function HomePage({ onLaunchApp, onOpenAuth, currentUser }) {
       </header>
 
       {/* HERO SECTION */}
-      <section className="relative mx-auto max-w-7xl px-4 pt-16 pb-20 sm:px-6 lg:pt-24 lg:pb-28 text-center space-y-8">
+      <section className="relative w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 pt-16 pb-20 sm:pt-20 sm:pb-24 text-center space-y-8">
         {/* Animated Badge */}
         <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-1.5 text-xs font-semibold text-indigo-300 backdrop-blur-md animate-float">
           <span className="relative flex h-2 w-2">
@@ -315,7 +315,7 @@ export default function HomePage({ onLaunchApp, onOpenAuth, currentUser }) {
       </section>
 
       {/* WEALTH ACCUMULATOR & COMPOUND SIMULATOR */}
-      <section id="simulator" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 border-t border-slate-800/80">
+      <section id="simulator" className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 py-16 border-t border-slate-800/80">
         <div className="text-center space-y-3 mb-12">
           <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-400">
             <Calculator className="h-4 w-4" />
@@ -432,7 +432,7 @@ export default function HomePage({ onLaunchApp, onOpenAuth, currentUser }) {
       </section>
 
       {/* CORE INTELLIGENCE CAPABILITIES */}
-      <section id="features" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 border-t border-slate-800/80">
+      <section id="features" className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 py-20 border-t border-slate-800/80">
         <div className="text-center space-y-3 mb-14">
           <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-400">
             <Cpu className="h-4 w-4" />
@@ -505,7 +505,7 @@ export default function HomePage({ onLaunchApp, onOpenAuth, currentUser }) {
       </section>
 
       {/* COMPARISON MATRIX */}
-      <section id="comparison" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 border-t border-slate-800/80">
+      <section id="comparison" className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 py-20 border-t border-slate-800/80">
         <div className="text-center space-y-3 mb-14">
           <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-cyan-400">
             <Zap className="h-4 w-4" />
@@ -578,7 +578,7 @@ export default function HomePage({ onLaunchApp, onOpenAuth, currentUser }) {
       </section>
 
       {/* SECURITY GUARANTEE */}
-      <section id="security" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 border-t border-slate-800/80">
+      <section id="security" className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 py-20 border-t border-slate-800/80">
         <div className="max-w-4xl mx-auto rounded-3xl border border-emerald-500/20 bg-emerald-950/10 p-8 sm:p-12 text-center space-y-6">
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
             <Lock className="h-6 w-6" />

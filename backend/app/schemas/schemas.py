@@ -7,8 +7,13 @@ class UserRegister(BaseModel):
     name: str
     email: str
     password: str
-    monthly_income: Optional[float] = 6500.0
+    monthly_income: Optional[float] = 0.0
     currency: Optional[str] = "$"
+
+class UpdateSalaryRequest(BaseModel):
+    monthly_income: float
+    currency: Optional[str] = "$"
+
 
 class UserLogin(BaseModel):
     email: str

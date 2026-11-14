@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Lock, Mail, User, DollarSign, Sparkles, Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
+import { X, Lock, Mail, User, Sparkles, Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
 import { loginUser, registerUser } from "../services/api";
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode = "login" }) {
@@ -7,7 +7,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [monthlyIncome, setMonthlyIncome] = useState("6500");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -24,12 +23,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
       if (mode === "login") {
         data = await loginUser(email, password);
       } else {
+        // Register with pure credentials; salary is configured after login
         data = await registerUser({
           name,
           email,
           password,
-          monthly_income: parseFloat(monthlyIncome) || 6500.0,
-          currency: "$",
         });
       }
       if (onAuthSuccess) onAuthSuccess(data.user);
@@ -59,12 +57,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
             <Sparkles className="h-6 w-6 text-white" />
           </div>
           <h3 className="text-xl font-bold tracking-tight text-white">
-            {mode === "login" ? "Welcome back to FinPilot MAX" : "Create Your Secure FinPilot Account"}
+            {mode === "login" ? "Sign In to FinPilot MAX" : "Create Your Personal Account"}
           </h3>
           <p className="text-xs text-slate-400 max-w-xs mx-auto">
             {mode === "login"
-              ? "Sign in to access your personal finance intelligence workstation"
-              : "Set up your private financial ledger and autonomous AI advisor"}
+              ? "Access your autonomous AI personal finance advisor workspace"
+              : "Get started in seconds with your name, email, and password"}
           </p>
         </div>
 
@@ -121,7 +119,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Sarah Jenkins"
+                  placeholder="e.g. Hemanth Kumar"
                   className="w-full rounded-xl border border-slate-700 bg-slate-950/60 pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
@@ -168,30 +166,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
               </button>
             </div>
           </div>
-
-          {mode === "register" && (
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Estimated Monthly Net Income ($)
-              </label>
-              <div className="relative">
-                <DollarSign className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  step="100"
-                  value={monthlyIncome}
-                  onChange={(e) => setMonthlyIncome(e.target.value)}
-                  placeholder="6500"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950/60 pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                />
-              </div>
-              <p className="text-[10px] text-slate-500 mt-1">
-                Used to calibrate your baseline 50/30/20 budget envelope and savings benchmark.
-              </p>
-            </div>
-          )}
 
           <button
             type="submit"

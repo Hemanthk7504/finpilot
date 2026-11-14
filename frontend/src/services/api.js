@@ -90,6 +90,21 @@ export async function getCurrentUser() {
   return user;
 }
 
+export async function updateUserSalary(monthlyIncome, currency = "$") {
+  const res = await fetch(`${API_BASE}/auth/salary`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ monthly_income: parseFloat(monthlyIncome), currency }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update salary.");
+  }
+  const user = await res.json();
+  setStoredUser(user);
+  return user;
+}
+
 export function logoutUser() {
   setStoredToken(null);
   setStoredUser(null);

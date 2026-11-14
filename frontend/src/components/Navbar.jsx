@@ -6,7 +6,6 @@ import {
   Bot,
   Home,
   LogOut,
-  User,
   ChevronDown,
   UploadCloud,
   LayoutDashboard,
@@ -14,7 +13,8 @@ import {
   Target,
   LineChart,
   ListOrdered,
-  Bell,
+  DollarSign,
+  Edit3,
   CheckCircle2
 } from "lucide-react";
 
@@ -27,14 +27,16 @@ export default function Navbar({
   onOpenChat,
   onOpenReport,
   onOpenUpload,
+  onOpenSalaryModal,
   onOpenAuth,
   onLogout
 }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef(null);
 
-  const healthScore = overview?.health_score ?? 82;
-  const grade = overview?.health_grade ?? "A";
+  const healthScore = overview?.health_score ?? 81.2;
+  const healthGrade = overview?.health_grade ?? "A";
+  const monthlySalary = currentUser?.monthly_income ?? overview?.monthly_income ?? 0;
 
   const getScoreColor = (score) => {
     if (score >= 80) return "text-emerald-400 border-emerald-500/30 bg-emerald-500/10";
@@ -60,169 +62,205 @@ export default function Navbar({
     { id: "health-score", label: "Health Score", icon: Shield },
     { id: "budgets-goals", label: "Budgets & Goals", icon: Target },
     { id: "investments", label: "Investments", icon: LineChart },
-    { id: "ledger", label: "Ledger", icon: ListOrdered },
+    { id: "ledger", label: "Transactions", icon: ListOrdered },
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6">
-        {/* Brand & Home Navigation */}
-        <div className="flex items-center gap-6">
-          <button
-            onClick={onNavigateHome}
-            className="flex items-center gap-2.5 text-left focus:outline-none group"
-            title="Return to Home Page"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 shadow-md shadow-indigo-500/25 group-hover:scale-105 transition">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-lg font-bold tracking-tight text-white group-hover:text-indigo-300 transition">
-                FinPilot
-              </span>
-              <span className="rounded bg-gradient-to-r from-indigo-500 to-cyan-500 px-1.5 py-0.2 text-[10px] font-extrabold uppercase text-white shadow-sm">
-                MAX
-              </span>
-            </div>
-          </button>
-
-          {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {navLinks.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => onSelectTab(tab.id)}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                    isActive
-                      ? "bg-indigo-600/90 text-white shadow-sm shadow-indigo-600/20"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Action Controls & User Account Menu */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Health Score Pill */}
-          {overview?.health_score && (
+    <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/95 backdrop-blur-xl">
+      {/* TIER 1: BRAND IDENTITY, QUICK METRICS & UTILITY ACTIONS (FULL WIDTH) */}
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 py-2.5 border-b border-slate-800/50">
+        <div className="flex items-center justify-between gap-4">
+          {/* Left: Brand Identity & Live Mode Pill */}
+          <div className="flex items-center gap-3 shrink-0">
             <button
-              onClick={() => onSelectTab("health-score")}
-              className={`hidden sm:flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold transition hover:scale-105 ${getScoreColor(
-                healthScore
-              )}`}
-              title="View Financial Health Score Details"
+              onClick={onNavigateHome}
+              className="flex items-center gap-2.5 text-left focus:outline-none group"
+              title="Return to Home Landing Page"
             >
-              <Shield className="h-3.5 w-3.5" />
-              <span>Score: <strong>{healthScore}</strong> ({grade})</span>
-            </button>
-          )}
-
-          {/* Upload Statement Action */}
-          <button
-            onClick={onOpenUpload}
-            className="flex items-center gap-1.5 rounded-xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 px-3 py-1.5 text-xs font-semibold transition hover:border-indigo-500/60"
-            title="Import Bank Statement (CSV or PDF)"
-          >
-            <UploadCloud className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Import Statement</span>
-          </button>
-
-          {/* Executive Report Button */}
-          <button
-            onClick={onOpenReport}
-            className="hidden md:flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-1.5 text-xs font-medium text-slate-300 hover:border-slate-700 hover:bg-slate-800 transition"
-          >
-            <FileText className="h-3.5 w-3.5 text-indigo-400" />
-            <span>Executive Report</span>
-          </button>
-
-          {/* AI Co-Pilot Button */}
-          <button
-            onClick={onOpenChat}
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-3 py-1.5 text-xs font-bold shadow-md shadow-indigo-600/30 transition hover:scale-105 active:scale-95"
-          >
-            <Bot className="h-3.5 w-3.5" />
-            <span className="hidden xs:inline">AI Co-Pilot</span>
-          </button>
-
-          {/* User Profile Menu */}
-          {currentUser ? (
-            <div className="relative" ref={userMenuRef}>
-              <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/90 pl-1.5 pr-2.5 py-1 text-xs text-slate-200 hover:border-slate-700 hover:bg-slate-800 transition"
-              >
-                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-tr from-indigo-600 to-cyan-500 text-[11px] font-bold text-white uppercase">
-                  {currentUser.name ? currentUser.name[0] : "U"}
-                </div>
-                <span className="font-semibold max-w-[110px] truncate hidden sm:inline">
-                  {currentUser.name}
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition">
+                <Sparkles className="h-4.5 w-4.5 text-white" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg font-extrabold tracking-tight text-white group-hover:text-indigo-300 transition">
+                  FinPilot
                 </span>
-                <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
-              </button>
+                <span className="rounded bg-gradient-to-r from-indigo-500 to-cyan-500 px-1.5 py-0.5 text-[10px] font-black uppercase text-white shadow-sm">
+                  MAX
+                </span>
+              </div>
+            </button>
 
-              {/* User Dropdown */}
-              {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-800 bg-slate-900/95 p-2 shadow-2xl backdrop-blur-xl z-50 space-y-1">
-                  <div className="border-b border-slate-800 px-3 py-2.5">
-                    <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
-                    <p className="text-[11px] text-slate-400 truncate">{currentUser.email}</p>
-                    <div className="mt-1.5 flex items-center gap-1 text-[10px] text-emerald-400">
-                      <CheckCircle2 className="h-3 w-3" />
-                      <span>Verified Personal Account</span>
-                    </div>
-                  </div>
-
-                  <div className="px-2 py-1 text-[11px] text-slate-400">
-                    <span className="text-slate-500">Monthly Net Income:</span>{" "}
-                    <strong className="text-slate-200">
-                      ${currentUser.monthly_income?.toLocaleString() || "6,500"}
-                    </strong>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setShowUserMenu(false);
-                      onNavigateHome();
-                    }}
-                    className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition"
-                  >
-                    <Home className="h-3.5 w-3.5 text-slate-400" />
-                    <span>Home Landing Page</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setShowUserMenu(false);
-                      onLogout();
-                    }}
-                    className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition"
-                  >
-                    <LogOut className="h-3.5 w-3.5" />
-                    <span>Sign Out</span>
-                  </button>
-                </div>
-              )}
+            <div className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400 whitespace-nowrap shrink-0">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Live Finance OS</span>
             </div>
-          ) : (
-            <div className="flex items-center gap-2">
+          </div>
+
+          {/* Right: Salary Pill, Actions & User Account */}
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-nowrap shrink-0">
+            {/* Monthly Salary Setup Pill */}
+            {currentUser && (
               <button
-                onClick={onOpenAuth}
-                className="rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-3.5 py-1.5 transition shadow-sm"
+                type="button"
+                onClick={onOpenSalaryModal}
+                className="flex items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 text-xs font-semibold text-indigo-300 transition hover:border-indigo-500/50 shrink-0 whitespace-nowrap"
+                title="Click to view or edit your monthly take-home salary"
               >
-                Sign In
+                <DollarSign className="h-3.5 w-3.5 text-indigo-400" />
+                <span className="hidden md:inline">Salary:</span>
+                <strong className="text-white font-numeric font-bold">
+                  {monthlySalary > 0 ? `$${monthlySalary.toLocaleString()}/mo` : "Set Salary"}
+                </strong>
+                <Edit3 className="h-3 w-3 text-indigo-400 ml-0.5" />
               </button>
-            </div>
-          )}
+            )}
+
+            {/* Health Score Pill (Large Displays) */}
+            {overview?.health_score && (
+              <button
+                onClick={() => onSelectTab("health-score")}
+                className={`hidden xl:flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition hover:scale-105 shrink-0 whitespace-nowrap ${getScoreColor(
+                  healthScore
+                )}`}
+                title="Financial Health Score"
+              >
+                <Shield className="h-3.5 w-3.5" />
+                <span>Score: <strong className="font-bold">{healthScore.toFixed(0)}</strong> ({healthGrade})</span>
+              </button>
+            )}
+
+            {/* Import Statement Primary Action */}
+            <button
+              onClick={onOpenUpload}
+              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white px-3.5 py-1.5 text-xs font-bold shadow-md shadow-indigo-600/25 transition hover:scale-105 active:scale-95 shrink-0 whitespace-nowrap"
+              title="Import Bank Statement (CSV or PDF)"
+            >
+              <UploadCloud className="h-3.5 w-3.5" />
+              <span>Import Statement</span>
+            </button>
+
+            {/* Executive Report Button */}
+            <button
+              onClick={onOpenReport}
+              className="hidden 2xl:flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-1.5 text-xs font-medium text-slate-300 hover:border-slate-700 hover:bg-slate-800 transition shrink-0 whitespace-nowrap"
+            >
+              <FileText className="h-3.5 w-3.5 text-indigo-400" />
+              <span>Executive Report</span>
+            </button>
+
+            {/* AI Co-Pilot Button */}
+            <button
+              onClick={onOpenChat}
+              className="flex items-center gap-1.5 rounded-xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 px-3 py-1.5 text-xs font-bold transition hover:scale-105 shrink-0 whitespace-nowrap"
+            >
+              <Bot className="h-3.5 w-3.5 text-purple-400" />
+              <span className="hidden sm:inline">AI Co-Pilot</span>
+            </button>
+
+            {/* User Profile Menu */}
+            {currentUser ? (
+              <div className="relative shrink-0" ref={userMenuRef}>
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/90 pl-1.5 pr-2.5 py-1 text-xs text-slate-200 hover:border-slate-700 hover:bg-slate-800 transition"
+                >
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-indigo-600 to-cyan-500 text-xs font-bold text-white uppercase shadow-sm">
+                    {currentUser.name ? currentUser.name[0] : "U"}
+                  </div>
+                  <span className="font-semibold max-w-[110px] truncate hidden sm:inline">
+                    {currentUser.name}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                </button>
+
+                {/* User Dropdown Menu */}
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-800 bg-slate-900/95 p-2 shadow-2xl backdrop-blur-xl z-50 space-y-1">
+                    <div className="border-b border-slate-800 px-3 py-2.5">
+                      <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
+                      <p className="text-[11px] text-slate-400 truncate">{currentUser.email}</p>
+                      <div className="mt-1.5 flex items-center gap-1 text-[10px] text-emerald-400">
+                        <CheckCircle2 className="h-3 w-3" />
+                        <span>Verified Account</span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onOpenSalaryModal();
+                      }}
+                      className="w-full flex items-center justify-between rounded-xl px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition"
+                    >
+                      <span className="flex items-center gap-2">
+                        <DollarSign className="h-3.5 w-3.5 text-indigo-400" />
+                        <span>Monthly Salary</span>
+                      </span>
+                      <strong className="text-indigo-400 font-numeric">
+                        {monthlySalary > 0 ? `$${monthlySalary.toLocaleString()}` : "Not Set"}
+                      </strong>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onNavigateHome();
+                      }}
+                      className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition"
+                    >
+                      <Home className="h-3.5 w-3.5 text-slate-400" />
+                      <span>Home Landing Page</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onLogout();
+                      }}
+                      className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition"
+                    >
+                      <LogOut className="h-3.5 w-3.5" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={onOpenAuth}
+                  className="rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-3.5 py-1.5 transition shadow-sm"
+                >
+                  Sign In
+                </button>
+              </div>
+            )}
+          </div>
         </div>
+      </div>
+
+      {/* TIER 2: PRIMARY NAVIGATION TABS (FULL-WIDTH, PUNCHY LABELS, ZERO WRAPPING) */}
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 bg-slate-950/70">
+        <nav className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-2">
+          {navLinks.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => onSelectTab(tab.id)}
+                className={`flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
+                  isActive
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/80"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0" />
+                <span className="whitespace-nowrap">{tab.label}</span>
+              </button>
+            );
+          })}
+        </nav>
       </div>
     </header>
   );

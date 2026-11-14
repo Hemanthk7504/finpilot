@@ -151,7 +151,15 @@ python run_project.py
 ```
 *(On Windows, you can also double-click `start.bat`)*
 
-### Option 2: Running Services Manually
+### Option 2: Live Public Link via ngrok
+To access or share FinPilot MAX over the internet on mobile devices or remote workstations:
+```bash
+ngrok http 9000
+```
+- Active Public Tunnel: `https://balsamic-cogwheel-fleshy.ngrok-free.dev`
+- Local Tunnel Inspection Dashboard: `http://127.0.0.1:4040`
+
+### Option 3: Running Services Manually
 
 **1. Start Backend:**
 ```bash
@@ -175,11 +183,15 @@ npm run dev -- --port 9000
    - Visitors land on the **Dedicated Home Page** with interactive wealth simulations, engine showcases, and privacy specifications.
    - Header navigation provides instant access to Capabilities, Wealth Simulator, Comparison, and Security.
 2. **New User Registration & Account Creation**:
-   - Click **"Get Started Free"** or **"Sign In"** -> **"Create Account"** to register with your name, email, password, and estimated monthly net income. FinPilot automatically generates an isolated personal ledger, sets up initial 50/30/20 category envelopes, and issues a secure JWT token.
-3. **Secure Sign In & Session Persistence**:
+   - Click **"Get Started Free"** or **"Sign In"** -> **"Create Account"** to register with your full name, email, and password. Friction-free registration requires no salary or banking details upfront.
+3. **Post-Login Monthly Salary Configuration**:
+   - Immediately upon first sign-in, an interactive **Salary Setup Modal** prompts the user to enter their monthly net take-home salary (with quick preset chips like $3,000, $5,000, $6,500, $10,000).
+   - Setting your salary dynamically calibrates the 50/30/20 budget envelopes, savings targets, and health score benchmarks in real-time.
+   - You can view or update your salary at any time from the dedicated **"💼 Salary: $X/mo ✎"** pill in the top navbar.
+4. **Secure Sign In & Session Persistence**:
    - Sign in with your registered email and password. Tokens are maintained securely in client storage with automatic bearer authorization headers attached to all backend requests.
-4. **Statement Import & Workspace**:
-   - Use the **"Import Statement"** button in the executive navbar to upload your real CSV or PDF bank statements for immediate classification and health score computation.
+5. **Statement Import & Real-Time Workspace**:
+   - Use the **"Import Statement"** button in the executive navbar to upload your real CSV or PDF bank statements for immediate classification, fraud detection, cash flow forecasting, and health score computation.
 
 ---
 
