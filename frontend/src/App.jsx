@@ -158,15 +158,19 @@ export default function App() {
   };
 
   useEffect(() => {
-    // Check if user session exists
+    // Check if real user session exists
     getCurrentUser()
       .then((user) => {
         if (user) {
           setCurrentUser(user);
+          loadAllData();
+        } else {
+          setIsLoading(false);
         }
       })
-      .catch(() => {});
-    loadAllData();
+      .catch(() => {
+        setIsLoading(false);
+      });
   }, []);
 
   const handleAuthSuccess = (user) => {

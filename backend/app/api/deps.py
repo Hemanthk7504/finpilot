@@ -12,7 +12,7 @@ def get_current_user(
     cred: Optional[HTTPAuthorizationCredentials] = Depends(security),
     db: Session = Depends(get_db)
 ) -> User:
-    """Validate JWT token and return active user. Real authentication required."""
+    """Validate JWT token and return active user. Strict enterprise authentication required."""
     if cred and cred.credentials:
         payload = decode_access_token(cred.credentials)
         if payload and "sub" in payload:
@@ -22,7 +22,7 @@ def get_current_user(
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Authentication required. Please sign in or create an account.",
+        detail="Enterprise session required. Please sign in or register an account.",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
