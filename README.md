@@ -71,6 +71,55 @@ Transparent, 5-pillar composite scoring model inspired by CFPB wellness benchmar
 - Answers queries such as *"Can I afford a $1,200 vacation next month?"*, *"Where did my money go?"*, and *"How to boost my score to 90?"*.
 - Works out-of-the-box with a high-accuracy local financial decision engine, with optional Gemini API integration.
 
+### 11. ☀️ Seamless Light & Dark Theme System
+- Complete dynamic theming conforming to modern web standards (`<meta name="color-scheme">` + CSS custom properties).
+- Crisp light theme (clean porcelain cards, high contrast, soft elevation) alongside executive OLED dark mode.
+- Smooth Sun / Moon toggle button in the header bar with persistence across sessions.
+
+### 12. 🌐 Multi-Currency Live FX Converter
+- Switch workspace currencies on the fly between **USD ($)**, **EUR (€)**, **GBP (£)**, **INR (₹)**, **CAD (C$)**, **AUD (A$)**, and **JPY (¥)**.
+- Integrated quick FX currency converter modal with live conversion rates.
+
+### 13. 🔥 FIRE (Financial Independence, Retire Early) Engine
+- Computes Lean FIRE (frugal baseline), Traditional FIRE (4% safe withdrawal rule), and Fat FIRE (luxury buffer) targets.
+- Compound interest retirement countdown slider showing exact years and months until financial freedom.
+
+### 14. 💳 Debt Acceleration Optimizer: Snowball vs. Avalanche
+- Dual-engine debt payoff comparison:
+  - **Debt Snowball**: Behavioral momentum (lowest balance first).
+  - **Debt Avalanche**: Mathematical optimization (highest APR first).
+- Visual comparisons of interest saved and debt-free dates with interactive monthly extra payment sliders.
+
+### 15. 🛡️ Emergency Runway & Stress-Test Gauge
+- Evaluates liquid cash reserves against essential monthly living expenses (Housing, Food, Utilities, Debt).
+- Classifies survival cushion into Critical (< 1 mo), Moderate (1–3 mo), Safe (3–6 mo CFPB benchmark), and Fortified (> 6 mo).
+
+### 16. 🛍️ "Can I Afford This?" Purchase Decision Engine
+- Interactive affordability evaluator: Test one-time purchases (e.g. MacBook, Vacation) or installment plans.
+- Instant AI verdict (Green Light, Caution, or Avoid) detailing post-purchase emergency runway impact.
+
+### 17. 📊 Tax Bracket & Pre-Tax Shield Estimator
+- Progressive federal income tax estimator based on current IRS brackets and filing status.
+- Computes immediate tax deductions and annual savings unlocked by 401(k) and IRA retirement contributions.
+
+### 18. 🔄 Recurring Subscription Audit & Cut Simulator
+- Automatic audit of recurring subscriptions with annual drain metrics.
+- Checkbox simulator to test cutting unused subscriptions with live annual savings readouts.
+
+### 19. ⚖️ 50/30/20 Rule Shock Tester & Rebalancer
+- Interactive sliders for Needs, Wants, and Savings margins.
+- Simulates real-life budget shocks (e.g. rent increases or inflation) with instant CFPB health feedback.
+
+### 20. 🔔 Smart Spending Threshold Rules & Early Guards
+- Custom budget alert rules (e.g., "Warn me when Dining reaches 80%").
+- Proactive status badges to prevent month-end overspending.
+
+### 21. 🏆 Gamified Milestones & Achievement Badges
+- Celebrates financial wins: Emergency Fortress, Salary Calibrated, Data Pioneer, Super Saver, and Fraud Sentinel.
+
+### 22. 🏛️ Personal Balance Sheet & Net Worth Engine
+- Visual Asset vs. Liability accounting: Liquid cash, investments, and debts with 6-month projected net worth trajectory charts.
+
 ---
 
 ## 🛠️ Architecture & Tech Stack
