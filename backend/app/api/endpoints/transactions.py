@@ -4,6 +4,8 @@ from typing import List, Optional
 from datetime import datetime
 from backend.app.db.session import get_db
 from backend.app.core.config import settings
+from backend.app.api.deps import get_current_user
+from backend.app.models.user import User
 from backend.app.models.transaction import Transaction
 from backend.app.models.alert import Alert
 from backend.app.schemas.schemas import TransactionOut, TransactionCreate, TransactionUpdate, UploadSummaryOut
@@ -21,9 +23,10 @@ def get_transactions(
     search: Optional[str] = None,
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    query = db.query(Transaction).filter(Transaction.user_id == settings.DEMO_USER_ID)
+    query = db.query(Transaction).filter(Transaction.user_id == current_user.id)
 
     if category:
         query = query.filter(Transaction.category_name == category)
@@ -41,14 +44,18 @@ def get_transactions(
     return query.order_by(Transaction.date.desc()).offset(offset).limit(limit).all()
 
 @router.post("", response_model=TransactionOut)
-def create_transaction(txn_in: TransactionCreate, db: Session = Depends(get_db)):
+def create_transaction(
+    txn_in: TransactionCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     # Auto categorize if category is Miscellaneous
     cat_name = txn_in.category_name
     if not cat_name or cat_name == "Miscellaneous":
         cat_name, _ = categorizer.categorize(txn_in.raw_narration, txn_in.clean_merchant, txn_in.type)
 
     txn = Transaction(
-        user_id=settings.DEMO_USER_ID,
+        user_id=current_user.id,
         date=txn_in.date,
         raw_narration=txn_in.raw_narration,
         clean_merchant=txn_in.clean_merchant or StatementParser.clean_merchant_name(txn_in.raw_narration),
@@ -66,10 +73,15 @@ def create_transaction(txn_in: TransactionCreate, db: Session = Depends(get_db))
     return txn
 
 @router.put("/{txn_id}", response_model=TransactionOut)
-def update_transaction(txn_id: str, txn_update: TransactionUpdate, db: Session = Depends(get_db)):
+def update_transaction(
+    txn_id: str,
+    txn_update: TransactionUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     txn = db.query(Transaction).filter(
         Transaction.id == txn_id,
-        Transaction.user_id == settings.DEMO_USER_ID
+        Transaction.user_id == current_user.id
     ).first()
     if not txn:
         raise HTTPException(status_code=404, detail="Transaction not found")
@@ -86,10 +98,14 @@ def update_transaction(txn_id: str, txn_update: TransactionUpdate, db: Session =
     return txn
 
 @router.delete("/{txn_id}")
-def delete_transaction(txn_id: str, db: Session = Depends(get_db)):
+def delete_transaction(
+    txn_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     txn = db.query(Transaction).filter(
         Transaction.id == txn_id,
-        Transaction.user_id == settings.DEMO_USER_ID
+        Transaction.user_id == current_user.id
     ).first()
     if not txn:
         raise HTTPException(status_code=404, detail="Transaction not found")
@@ -99,7 +115,11 @@ def delete_transaction(txn_id: str, db: Session = Depends(get_db)):
     return {"message": "Transaction deleted successfully"}
 
 @router.post("/upload", response_model=UploadSummaryOut)
-async def upload_bank_statement(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_bank_statement(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Upload CSV or PDF bank statement, auto-parse, classify, and scan for anomalies."""
     content = await file.read()
     filename = file.filename.lower()
@@ -141,7 +161,7 @@ async def upload_bank_statement(file: UploadFile = File(...), db: Session = Depe
         if is_ano:
             anomaly_count += 1
             alt = Alert(
-                user_id=settings.DEMO_USER_ID,
+                user_id=current_user.id,
                 title=f"Statement Anomaly: {item['clean_merchant']}",
                 message=item.get("anomaly_reason", "Suspicious charge flagged during statement import."),
                 severity="warning",
@@ -150,7 +170,7 @@ async def upload_bank_statement(file: UploadFile = File(...), db: Session = Depe
             db.add(alt)
 
         txn = Transaction(
-            user_id=settings.DEMO_USER_ID,
+            user_id=current_user.id,
             date=t_date,
             raw_narration=item["raw_narration"],
             clean_merchant=item["clean_merchant"],

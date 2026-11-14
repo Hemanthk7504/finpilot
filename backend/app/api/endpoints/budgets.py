@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 from typing import List
 from backend.app.db.session import get_db
 from backend.app.core.config import settings
+from backend.app.api.deps import get_current_user
+from backend.app.models.user import User
 from backend.app.models.budget import Budget
 from backend.app.models.goal import Goal
 from backend.app.models.transaction import Transaction
@@ -14,15 +16,18 @@ router = APIRouter()
 # --- BUDGET ENDPOINTS ---
 
 @router.get("/budgets", response_model=List[BudgetOut])
-def get_budgets(db: Session = Depends(get_db)):
+def get_budgets(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Fetch user budgets with dynamic real-time spending progress."""
-    budgets = db.query(Budget).filter(Budget.user_id == settings.DEMO_USER_ID).all()
+    budgets = db.query(Budget).filter(Budget.user_id == current_user.id).all()
     now = datetime.utcnow()
     thirty_days_ago = now - timedelta(days=30)
 
     # Compute actual spend per category in last 30 days
     txns = db.query(Transaction).filter(
-        Transaction.user_id == settings.DEMO_USER_ID,
+        Transaction.user_id == current_user.id,
         Transaction.type == "debit",
         Transaction.date >= thirty_days_ago
     ).all()
@@ -56,10 +61,14 @@ def get_budgets(db: Session = Depends(get_db)):
     return result
 
 @router.post("/budgets", response_model=BudgetOut)
-def set_budget(b_in: BudgetCreate, db: Session = Depends(get_db)):
+def set_budget(
+    b_in: BudgetCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Create or update category monthly budget limit."""
     existing = db.query(Budget).filter(
-        Budget.user_id == settings.DEMO_USER_ID,
+        Budget.user_id == current_user.id,
         Budget.category_name == b_in.category_name
     ).first()
 
@@ -71,7 +80,7 @@ def set_budget(b_in: BudgetCreate, db: Session = Depends(get_db)):
         target = existing
     else:
         target = Budget(
-            user_id=settings.DEMO_USER_ID,
+            user_id=current_user.id,
             category_name=b_in.category_name,
             monthly_limit=b_in.monthly_limit,
             period=b_in.period or "monthly"
@@ -92,10 +101,14 @@ def set_budget(b_in: BudgetCreate, db: Session = Depends(get_db)):
     )
 
 @router.delete("/budgets/{budget_id}")
-def delete_budget(budget_id: str, db: Session = Depends(get_db)):
+def delete_budget(
+    budget_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     b = db.query(Budget).filter(
         Budget.id == budget_id,
-        Budget.user_id == settings.DEMO_USER_ID
+        Budget.user_id == current_user.id
     ).first()
     if not b:
         raise HTTPException(status_code=404, detail="Budget not found")
@@ -106,9 +119,12 @@ def delete_budget(budget_id: str, db: Session = Depends(get_db)):
 # --- GOALS ENDPOINTS ---
 
 @router.get("/goals", response_model=List[GoalOut])
-def get_goals(db: Session = Depends(get_db)):
+def get_goals(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Fetch savings goals with calculated monthly required contribution and progress."""
-    goals = db.query(Goal).filter(Goal.user_id == settings.DEMO_USER_ID).all()
+    goals = db.query(Goal).filter(Goal.user_id == current_user.id).all()
     now = datetime.utcnow()
     results = []
 
@@ -140,9 +156,13 @@ def get_goals(db: Session = Depends(get_db)):
     return results
 
 @router.post("/goals", response_model=GoalOut)
-def create_goal(g_in: GoalCreate, db: Session = Depends(get_db)):
+def create_goal(
+    g_in: GoalCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     goal = Goal(
-        user_id=settings.DEMO_USER_ID,
+        user_id=current_user.id,
         title=g_in.title,
         target_amount=g_in.target_amount,
         current_amount=g_in.current_amount or 0.0,
@@ -174,10 +194,15 @@ def create_goal(g_in: GoalCreate, db: Session = Depends(get_db)):
     )
 
 @router.put("/goals/{goal_id}", response_model=GoalOut)
-def update_goal(goal_id: str, g_up: GoalUpdate, db: Session = Depends(get_db)):
+def update_goal(
+    goal_id: str,
+    g_up: GoalUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     goal = db.query(Goal).filter(
         Goal.id == goal_id,
-        Goal.user_id == settings.DEMO_USER_ID
+        Goal.user_id == current_user.id
     ).first()
     if not goal:
         raise HTTPException(status_code=404, detail="Goal not found")
@@ -216,10 +241,14 @@ def update_goal(goal_id: str, g_up: GoalUpdate, db: Session = Depends(get_db)):
     )
 
 @router.delete("/goals/{goal_id}")
-def delete_goal(goal_id: str, db: Session = Depends(get_db)):
+def delete_goal(
+    goal_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     goal = db.query(Goal).filter(
         Goal.id == goal_id,
-        Goal.user_id == settings.DEMO_USER_ID
+        Goal.user_id == current_user.id
     ).first()
     if not goal:
         raise HTTPException(status_code=404, detail="Goal not found")

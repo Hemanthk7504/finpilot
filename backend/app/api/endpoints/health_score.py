@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import json
 from backend.app.db.session import get_db
 from backend.app.core.config import settings
+from backend.app.api.deps import get_current_user
 from backend.app.models.transaction import Transaction
 from backend.app.models.budget import Budget
 from backend.app.models.user import User
@@ -14,9 +15,12 @@ from backend.app.services.health_scoring import health_scoring_engine
 router = APIRouter()
 
 @router.get("", response_model=HealthScoreOut)
-def get_health_score(db: Session = Depends(get_db)):
+def get_health_score(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Fetch transparent, multi-pillar Financial Health Score and actionable advice."""
-    user = db.query(User).filter(User.id == settings.DEMO_USER_ID).first()
+    user = current_user
     monthly_income = user.monthly_income if user else 6500.0
 
     now = datetime.utcnow()
@@ -24,7 +28,7 @@ def get_health_score(db: Session = Depends(get_db)):
 
     # 30-day transactions
     txns_30d = db.query(Transaction).filter(
-        Transaction.user_id == settings.DEMO_USER_ID,
+        Transaction.user_id == current_user.id,
         Transaction.date >= thirty_days_ago
     ).all()
 
@@ -36,11 +40,11 @@ def get_health_score(db: Session = Depends(get_db)):
 
     # Total liquid balance
     all_credits = db.query(Transaction).filter(
-        Transaction.user_id == settings.DEMO_USER_ID,
+        Transaction.user_id == current_user.id,
         Transaction.type == "credit"
     ).all()
     all_debits = db.query(Transaction).filter(
-        Transaction.user_id == settings.DEMO_USER_ID,
+        Transaction.user_id == current_user.id,
         Transaction.type == "debit"
     ).all()
     current_balance = sum(t.amount for t in all_credits) - sum(t.amount for t in all_debits)
@@ -48,7 +52,7 @@ def get_health_score(db: Session = Depends(get_db)):
         current_balance = 5420.0
 
     # Budgets
-    budgets = {b.category_name: b.monthly_limit for b in db.query(Budget).filter(Budget.user_id == settings.DEMO_USER_ID).all()}
+    budgets = {b.category_name: b.monthly_limit for b in db.query(Budget).filter(Budget.user_id == current_user.id).all()}
     debt_spend = cat_spending.get("Loans & Debt EMI", 0.0)
 
     result = health_scoring_engine.compute(
@@ -62,7 +66,7 @@ def get_health_score(db: Session = Depends(get_db)):
 
     # Record to historical score table
     record = HealthScore(
-        user_id=settings.DEMO_USER_ID,
+        user_id=current_user.id,
         total_score=result["total_score"],
         grade=result["grade"],
         savings_score=result["pillars"][0]["score"],
@@ -77,7 +81,7 @@ def get_health_score(db: Session = Depends(get_db)):
 
     # Historical trend for visual charting
     history = db.query(HealthScore).filter(
-        HealthScore.user_id == settings.DEMO_USER_ID
+        HealthScore.user_id == current_user.id
     ).order_by(HealthScore.created_at.desc()).limit(7).all()
 
     trend = [

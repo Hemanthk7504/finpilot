@@ -3,6 +3,7 @@ import random
 import pandas as pd
 from sqlalchemy.orm import Session
 from backend.app.core.config import settings
+from backend.app.core.security import hash_password
 from backend.app.models.user import User
 from backend.app.models.category import Category
 from backend.app.models.transaction import Transaction
@@ -35,11 +36,15 @@ def seed_database_if_empty(db: Session):
             id=settings.DEMO_USER_ID,
             name=settings.DEMO_USER_NAME,
             email=settings.DEMO_USER_EMAIL,
+            hashed_password=hash_password("demo1234"),
             currency=settings.DEFAULT_CURRENCY,
             monthly_income=6500.0,
             risk_profile="Balanced"
         )
         db.add(user)
+        db.commit()
+    elif not user.hashed_password:
+        user.hashed_password = hash_password("demo1234")
         db.commit()
 
     # 3. Budgets

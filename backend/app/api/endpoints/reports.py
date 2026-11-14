@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import os
 from backend.app.db.session import get_db
 from backend.app.core.config import settings
+from backend.app.api.deps import get_current_user
 from backend.app.models.transaction import Transaction
 from backend.app.models.user import User
 from backend.app.models.goal import Goal
@@ -17,15 +18,18 @@ from backend.app.services.forecaster import cash_flow_forecaster
 router = APIRouter()
 
 @router.get("/summary")
-def get_report_summary(db: Session = Depends(get_db)):
+def get_report_summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Comprehensive financial health report summary for printable / exportable view."""
-    user = db.query(User).filter(User.id == settings.DEMO_USER_ID).first()
+    user = current_user
     income = user.monthly_income if user else 6500.0
 
     now = datetime.utcnow()
     thirty_days_ago = now - timedelta(days=30)
     txns = db.query(Transaction).filter(
-        Transaction.user_id == settings.DEMO_USER_ID,
+        Transaction.user_id == current_user.id,
         Transaction.date >= thirty_days_ago
     ).all()
 
@@ -38,11 +42,11 @@ def get_report_summary(db: Session = Depends(get_db)):
         if t.type == "debit":
             cat_map[t.category_name] = cat_map.get(t.category_name, 0.0) + t.amount
 
-    all_credits = sum(t.amount for t in db.query(Transaction).filter(Transaction.user_id == settings.DEMO_USER_ID, Transaction.type == "credit").all())
-    all_debits = sum(t.amount for t in db.query(Transaction).filter(Transaction.user_id == settings.DEMO_USER_ID, Transaction.type == "debit").all())
+    all_credits = sum(t.amount for t in db.query(Transaction).filter(Transaction.user_id == current_user.id, Transaction.type == "credit").all())
+    all_debits = sum(t.amount for t in db.query(Transaction).filter(Transaction.user_id == current_user.id, Transaction.type == "debit").all())
     balance = (all_credits - all_debits) if all_credits > all_debits else 4250.0
 
-    budgets = {b.category_name: b.monthly_limit for b in db.query(Budget).filter(Budget.user_id == settings.DEMO_USER_ID).all()}
+    budgets = {b.category_name: b.monthly_limit for b in db.query(Budget).filter(Budget.user_id == current_user.id).all()}
     health_res = health_scoring_engine.compute(
         monthly_income=income,
         monthly_expense=total_outflow,
@@ -52,8 +56,8 @@ def get_report_summary(db: Session = Depends(get_db)):
         debt_payments=cat_map.get("Loans & Debt EMI", 0.0)
     )
 
-    goals = db.query(Goal).filter(Goal.user_id == settings.DEMO_USER_ID).all()
-    anomalies = db.query(Transaction).filter(Transaction.user_id == settings.DEMO_USER_ID, Transaction.is_anomaly == True).all()
+    goals = db.query(Goal).filter(Goal.user_id == current_user.id).all()
+    anomalies = db.query(Transaction).filter(Transaction.user_id == current_user.id, Transaction.is_anomaly == True).all()
 
     return {
         "generated_at": now.strftime("%B %d, %Y - %H:%M UTC"),
@@ -77,13 +81,17 @@ def get_report_summary(db: Session = Depends(get_db)):
     }
 
 @router.post("/reset-demo")
-def reset_demo_data(db: Session = Depends(get_db)):
+def reset_demo_data(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Reset transactions, budgets, goals, and reload realistic seed data."""
-    db.query(Transaction).filter(Transaction.user_id == settings.DEMO_USER_ID).delete()
-    db.query(Alert).filter(Alert.user_id == settings.DEMO_USER_ID).delete()
+    target_id = current_user.id if current_user else settings.DEMO_USER_ID
+    db.query(Transaction).filter(Transaction.user_id == target_id).delete()
+    db.query(Alert).filter(Alert.user_id == target_id).delete()
     db.commit()
 
-    seed_sample_transactions(db, settings.DEMO_USER_ID)
+    seed_sample_transactions(db, target_id)
     return {"message": "Demo financial dataset successfully refreshed with new transactions, anomalies, and recurring patterns."}
 
 @router.get("/download-sample-statement")

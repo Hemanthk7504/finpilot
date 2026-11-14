@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any
 from backend.app.db.session import get_db
 from backend.app.core.config import settings
+from backend.app.api.deps import get_current_user
 from backend.app.models.transaction import Transaction
 from backend.app.models.user import User
 from backend.app.models.budget import Budget
@@ -15,16 +16,20 @@ from backend.app.services.forecaster import cash_flow_forecaster
 router = APIRouter()
 
 @router.post("/chat", response_model=ChatResponse)
-def chat_with_advisor(req: ChatRequest, db: Session = Depends(get_db)):
+def chat_with_advisor(
+    req: ChatRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Interactive conversational Co-Pilot answering user questions with live financial context."""
-    user = db.query(User).filter(User.id == settings.DEMO_USER_ID).first()
+    user = current_user
     income = user.monthly_income if user else 6500.0
 
     now = datetime.utcnow()
     thirty_days_ago = now - timedelta(days=30)
 
     txns_30d = db.query(Transaction).filter(
-        Transaction.user_id == settings.DEMO_USER_ID,
+        Transaction.user_id == current_user.id,
         Transaction.date >= thirty_days_ago
     ).all()
 
@@ -44,18 +49,18 @@ def chat_with_advisor(req: ChatRequest, db: Session = Depends(get_db)):
     ]
 
     # Balance
-    all_credits = sum(t.amount for t in db.query(Transaction).filter(Transaction.user_id == settings.DEMO_USER_ID, Transaction.type == "credit").all())
-    all_debits = sum(t.amount for t in db.query(Transaction).filter(Transaction.user_id == settings.DEMO_USER_ID, Transaction.type == "debit").all())
+    all_credits = sum(t.amount for t in db.query(Transaction).filter(Transaction.user_id == current_user.id, Transaction.type == "credit").all())
+    all_debits = sum(t.amount for t in db.query(Transaction).filter(Transaction.user_id == current_user.id, Transaction.type == "debit").all())
     current_balance = (all_credits - all_debits) if all_credits > all_debits else 4250.0
 
     # Anomalies
     anomalies = [
         {"merchant": t.clean_merchant, "amount": t.amount, "date": t.date.strftime("%b %d"), "reason": t.anomaly_reason}
-        for t in db.query(Transaction).filter(Transaction.user_id == settings.DEMO_USER_ID, Transaction.is_anomaly == True).limit(5).all()
+        for t in db.query(Transaction).filter(Transaction.user_id == current_user.id, Transaction.is_anomaly == True).limit(5).all()
     ]
 
     # Health Score
-    budgets = {b.category_name: b.monthly_limit for b in db.query(Budget).filter(Budget.user_id == settings.DEMO_USER_ID).all()}
+    budgets = {b.category_name: b.monthly_limit for b in db.query(Budget).filter(Budget.user_id == current_user.id).all()}
     health_res = health_scoring_engine.compute(
         monthly_income=income,
         monthly_expense=total_expense,

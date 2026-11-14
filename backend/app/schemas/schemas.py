@@ -2,6 +2,33 @@ from pydantic import BaseModel, ConfigDict
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
+# Auth & User Schemas
+class UserRegister(BaseModel):
+    name: str
+    email: str
+    password: str
+    monthly_income: Optional[float] = 6500.0
+    currency: Optional[str] = "$"
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class UserResponse(BaseModel):
+    id: str
+    name: str
+    email: str
+    currency: str
+    monthly_income: float
+    risk_profile: str
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+
 # Category Schemas
 class CategoryBase(BaseModel):
     name: str
