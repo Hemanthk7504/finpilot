@@ -10,23 +10,23 @@ def main():
     print("=" * 65)
     print("  FinPilot MAX: AI-Powered Intelligent Personal Finance Advisor")
     print("=" * 65)
-    print("\n[1/2] Starting FastAPI Backend on http://localhost:8000 ...")
+    print("\n[1/2] Starting FastAPI Backend on http://localhost:8005 ...")
     backend_proc = subprocess.Popen(
         [sys.executable, "backend/run.py"],
         cwd=root_dir
     )
 
-    print("\n[2/2] Starting React Vite Frontend on http://localhost:5173 ...")
+    print("\n[2/2] Starting React Vite Frontend on http://localhost:9000 ...")
     frontend_cmd = "npm.cmd" if sys.platform == "win32" else "npm"
     frontend_proc = subprocess.Popen(
-        [frontend_cmd, "run", "dev"],
+        [frontend_cmd, "run", "dev", "--", "--port", "9000"],
         cwd=frontend_dir
     )
 
     print("\n" + "=" * 65)
     print("  🚀 FinPilot MAX is running successfully!")
-    print("  🌐 Frontend Dashboard: http://localhost:5173")
-    print("  📖 Backend API Docs:   http://localhost:8000/docs")
+    print("  🌐 Frontend Dashboard: http://localhost:9000")
+    print("  📖 Backend API Docs:   http://localhost:8005/docs")
     print("=" * 65)
     print("  Press Ctrl+C to terminate both servers...\n")
 

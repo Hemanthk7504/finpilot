@@ -157,14 +157,15 @@ python run_project.py
 ```bash
 python backend/run.py
 ```
-- API & Interactive Swagger Documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
+- API & Interactive Swagger Documentation: [http://localhost:8005/docs](http://localhost:8005/docs)
 
-**2. Start Frontend:**
+**2. Start Frontend (Unified Port 9000):**
 ```bash
 cd frontend
-npm run dev
+npm run dev -- --port 9000
 ```
-- FinPilot MAX Home & Dashboard: [http://localhost:5173](http://localhost:5173)
+- FinPilot MAX Home & Dashboard: [http://localhost:9000](http://localhost:9000)
+- Reverse proxy forwards `/api` directly to the FastAPI backend at `http://127.0.0.1:8005`.
 
 ---
 

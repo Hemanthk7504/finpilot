@@ -52,7 +52,7 @@ export default function StatementUploader({ onUploadSuccess }) {
   };
 
   const handleDownloadSample = () => {
-    window.open("http://localhost:8000/api/v1/reports/download-sample-statement", "_blank");
+    window.open("/api/v1/reports/download-sample-statement", "_blank");
   };
 
   return (
