@@ -248,3 +248,69 @@ export async function fetchReportSummary() {
   if (!res.ok) throw new Error("Failed to load report summary");
   return res.json();
 }
+
+// Advanced Intelligence & Simulators API
+export async function simulateFIRE(params = {}) {
+  const res = await fetch(`${API_BASE}/analytics/fire-sim`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error("Failed to simulate FIRE metrics");
+  return res.json();
+}
+
+export async function simulateDebtPayoff(params = {}) {
+  const res = await fetch(`${API_BASE}/analytics/debt-optimizer`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error("Failed to optimize debt payoff");
+  return res.json();
+}
+
+export async function fetchEmergencyRunway() {
+  const res = await fetch(`${API_BASE}/analytics/emergency-runway`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to load emergency runway");
+  return res.json();
+}
+
+export async function estimateTaxBracket(params = {}) {
+  const res = await fetch(`${API_BASE}/analytics/tax-estimator`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error("Failed to estimate tax bracket");
+  return res.json();
+}
+
+export async function checkAffordability(params = {}) {
+  const res = await fetch(`${API_BASE}/analytics/affordability-check`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error("Failed to check purchase affordability");
+  return res.json();
+}
+
+export async function fetchUserMilestones() {
+  const res = await fetch(`${API_BASE}/analytics/milestones`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to load milestones");
+  return res.json();
+}
+
+export async function fetchNetWorthTrend() {
+  const res = await fetch(`${API_BASE}/analytics/net-worth-trend`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to load net worth trend");
+  return res.json();
+}
+

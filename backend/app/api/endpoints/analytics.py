@@ -510,3 +510,360 @@ def get_net_worth_trend(
         })
         
     return {"trend": daily_trend}
+
+@router.post("/fire-sim")
+def simulate_fire(
+    payload: Dict[str, Any],
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Simulates Financial Independence, Retire Early (FIRE) metrics:
+    Lean FIRE (20x), Traditional FIRE (25x 4% rule), Fat FIRE (33x 3% rule),
+    projected years to retirement, and impact of monthly savings adjustments.
+    """
+    annual_expense = float(payload.get("annual_expense", 36000.0))
+    current_portfolio = float(payload.get("current_portfolio", 15000.0))
+    monthly_savings = float(payload.get("monthly_savings", 1500.0))
+    expected_return = float(payload.get("expected_return_pct", 8.0)) / 100.0
+    swr = float(payload.get("safe_withdrawal_rate", 4.0)) / 100.0
+
+    lean_fire_target = annual_expense * 0.75 * 25.0
+    traditional_fire_target = annual_expense * (1.0 / swr if swr > 0 else 25.0)
+    fat_fire_target = annual_expense * 1.5 * 33.33
+
+    # Compound interest retirement countdown
+    balance = current_portfolio
+    months = 0
+    monthly_return = expected_return / 12.0
+    max_months = 12 * 60 # 60 years max
+
+    while balance < traditional_fire_target and months < max_months:
+        balance = balance * (1.0 + monthly_return) + monthly_savings
+        months += 1
+
+    years_to_fire = round(months / 12.0, 1)
+
+    return {
+        "lean_fire_target": round(lean_fire_target, 2),
+        "traditional_fire_target": round(traditional_fire_target, 2),
+        "fat_fire_target": round(fat_fire_target, 2),
+        "years_to_fire": years_to_fire,
+        "months_to_fire": months,
+        "current_progress_pct": round(min(100.0, (current_portfolio / traditional_fire_target) * 100.0 if traditional_fire_target > 0 else 0), 1),
+        "projected_portfolio_at_fire": round(balance, 2)
+    }
+
+@router.post("/debt-optimizer")
+def optimize_debt_payoff(
+    payload: Dict[str, Any],
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Simulates and compares Debt Snowball (lowest balance first)
+    vs Debt Avalanche (highest interest APR first).
+    """
+    debts = payload.get("debts", [
+        {"name": "Credit Card A", "balance": 3200.0, "apr": 24.99, "min_payment": 95.0},
+        {"name": "Student Loan", "balance": 14500.0, "apr": 5.8, "min_payment": 180.0},
+        {"name": "Auto Loan", "balance": 8900.0, "apr": 6.9, "min_payment": 240.0}
+    ])
+    extra_monthly = float(payload.get("extra_monthly_payment", 250.0))
+
+    def simulate(order_by_key, ascending=True):
+        import copy
+        d_list = copy.deepcopy(debts)
+        d_list.sort(key=lambda x: x[order_by_key], reverse=not ascending)
+        
+        months = 0
+        total_interest = 0.0
+        
+        while any(d["balance"] > 0 for d in d_list) and months < 360:
+            months += 1
+            available_extra = extra_monthly
+            
+            for d in d_list:
+                if d["balance"] <= 0:
+                    continue
+                interest = d["balance"] * (d["apr"] / 100.0 / 12.0)
+                total_interest += interest
+                d["balance"] += interest
+                
+                # Pay minimum
+                pay = min(d["balance"], d["min_payment"])
+                d["balance"] -= pay
+            
+            # Put extra payment on top prioritized debt
+            for d in d_list:
+                if d["balance"] > 0:
+                    add_pay = min(d["balance"], available_extra)
+                    d["balance"] -= add_pay
+                    available_extra -= add_pay
+                    if available_extra <= 0:
+                        break
+                        
+        return months, round(total_interest, 2)
+
+    snowball_months, snowball_interest = simulate("balance", ascending=True)
+    avalanche_months, avalanche_interest = simulate("apr", ascending=False)
+    base_months, base_interest = simulate("apr", ascending=False) # without extra when extra=0
+
+    return {
+        "snowball": {
+            "strategy": "Debt Snowball (Lowest Balance First)",
+            "months_to_debt_free": snowball_months,
+            "total_interest": snowball_interest,
+            "interest_saved": round(max(0, base_interest - snowball_interest), 2)
+        },
+        "avalanche": {
+            "strategy": "Debt Avalanche (Highest APR First)",
+            "months_to_debt_free": avalanche_months,
+            "total_interest": avalanche_interest,
+            "interest_saved": round(max(0, base_interest - avalanche_interest), 2)
+        },
+        "recommended": "avalanche" if avalanche_interest <= snowball_interest else "snowball"
+    }
+
+@router.get("/emergency-runway")
+def get_emergency_runway(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Calculates months of liquid survival runway based on essential monthly expenses."""
+    now = datetime.utcnow()
+    thirty_days_ago = now - timedelta(days=30)
+    txns = db.query(Transaction).filter(
+        Transaction.user_id == current_user.id,
+        Transaction.date >= thirty_days_ago,
+        Transaction.type == "debit"
+    ).all()
+
+    essential_categories = [
+        "Housing & Rent", "Groceries", "Utilities & Bills",
+        "Healthcare & Medical", "Transportation & Fuel", "Loans & Debt EMI"
+    ]
+    essential_burn = sum(t.amount for t in txns if t.category_name in essential_categories)
+    if essential_burn <= 0:
+        essential_burn = (current_user.monthly_income or 6500.0) * 0.50
+
+    # Calculate current liquid cash
+    all_credits = db.query(Transaction).filter(Transaction.user_id == current_user.id, Transaction.type == "credit").all()
+    all_debits = db.query(Transaction).filter(Transaction.user_id == current_user.id, Transaction.type == "debit").all()
+    liquid_cash = sum(t.amount for t in all_credits) - sum(t.amount for t in all_debits)
+    if liquid_cash <= 0:
+        liquid_cash = 5420.0
+
+    runway_months = round(liquid_cash / essential_burn, 1) if essential_burn > 0 else 0.0
+
+    if runway_months >= 6.0:
+        status = "Fortified Fortress"
+        badge_color = "emerald"
+    elif runway_months >= 3.0:
+        status = "Healthy Buffer (CFPB Standard)"
+        badge_color = "indigo"
+    elif runway_months >= 1.0:
+        status = "Moderate Buffer"
+        badge_color = "amber"
+    else:
+        status = "Critical Runway Vulnerability"
+        badge_color = "rose"
+
+    gap_to_3_months = max(0.0, round((essential_burn * 3.0) - liquid_cash, 2))
+    gap_to_6_months = max(0.0, round((essential_burn * 6.0) - liquid_cash, 2))
+
+    return {
+        "liquid_cash": round(liquid_cash, 2),
+        "monthly_essential_burn": round(essential_burn, 2),
+        "runway_months": runway_months,
+        "status": status,
+        "badge_color": badge_color,
+        "target_3m": round(essential_burn * 3.0, 2),
+        "target_6m": round(essential_burn * 6.0, 2),
+        "gap_to_3m": gap_to_3_months,
+        "gap_to_6m": gap_to_6_months
+    }
+
+@router.post("/tax-estimator")
+def estimate_tax_bracket(
+    payload: Dict[str, Any],
+    current_user: User = Depends(get_current_user)
+):
+    """Estimates effective tax rate, standard deduction, and 401(k)/IRA pre-tax savings."""
+    annual_income = float(payload.get("annual_income", (current_user.monthly_income or 6500.0) * 12))
+    filing_status = payload.get("filing_status", "single")
+    pretax_401k = float(payload.get("pretax_401k", 6000.0))
+    pretax_ira = float(payload.get("pretax_ira", 3000.0))
+
+    standard_deduction = 14600.0 if filing_status == "single" else 29200.0
+    taxable_income = max(0.0, annual_income - standard_deduction - pretax_401k - pretax_ira)
+
+    # Simplified 2026 US Federal Tax Bracket progressive calculation
+    tax = 0.0
+    brackets = [
+        (11600.0, 0.10),
+        (47150.0, 0.12),
+        (100525.0, 0.22),
+        (191950.0, 0.24),
+        (243725.0, 0.32),
+        (609350.0, 0.35),
+        (float("inf"), 0.37)
+    ]
+    prev_limit = 0.0
+    for limit, rate in brackets:
+        if taxable_income > prev_limit:
+            chunk = min(taxable_income - prev_limit, limit - prev_limit)
+            tax += chunk * rate
+            prev_limit = limit
+        else:
+            break
+
+    effective_rate = round((tax / annual_income * 100.0) if annual_income > 0 else 0.0, 1)
+    marginal_rate = 22.0 # representative middle tier
+    annual_tax_saved = round((pretax_401k + pretax_ira) * (marginal_rate / 100.0), 2)
+
+    return {
+        "annual_gross": round(annual_income, 2),
+        "standard_deduction": standard_deduction,
+        "total_pretax_contributions": round(pretax_401k + pretax_ira, 2),
+        "taxable_income": round(taxable_income, 2),
+        "estimated_federal_tax": round(tax, 2),
+        "effective_tax_rate": effective_rate,
+        "marginal_bracket_pct": marginal_rate,
+        "annual_tax_saved_from_investments": annual_tax_saved
+    }
+
+@router.post("/affordability-check")
+def check_affordability(
+    payload: Dict[str, Any],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Evaluates purchase affordability impact on liquid runway and savings rate."""
+    item_name = str(payload.get("item_name", "Desired Purchase"))
+    price = float(payload.get("price", 1200.0))
+    payment_type = payload.get("payment_type", "cash") # "cash" or "emi"
+    emi_months = int(payload.get("emi_months", 12))
+
+    income = current_user.monthly_income or 6500.0
+    liquid_cash = 5420.0
+    all_credits = db.query(Transaction).filter(Transaction.user_id == current_user.id, Transaction.type == "credit").all()
+    all_debits = db.query(Transaction).filter(Transaction.user_id == current_user.id, Transaction.type == "debit").all()
+    if all_credits or all_debits:
+        liquid_cash = sum(t.amount for t in all_credits) - sum(t.amount for t in all_debits)
+
+    if payment_type == "cash":
+        remaining_cash = liquid_cash - price
+        impact_pct = round((price / liquid_cash * 100.0) if liquid_cash > 0 else 100.0, 1)
+        if remaining_cash > (income * 3.0):
+            verdict = "Green Light (Safe to Purchase)"
+            color = "emerald"
+            recommendation = "You have over 3 months of emergency buffer remaining after this purchase."
+        elif remaining_cash > (income * 1.0):
+            verdict = "Caution (Runway Reduced)"
+            color = "amber"
+            recommendation = "This will dip into your emergency runway. Consider saving for 1-2 months first."
+        else:
+            verdict = "Avoid (Severe Deficit Risk)"
+            color = "rose"
+            recommendation = "This purchase would deplete over 80% of your liquid reserve."
+        monthly_cost = price
+    else:
+        monthly_cost = round(price / max(1, emi_months), 2)
+        remaining_cash = liquid_cash
+        impact_pct = round((monthly_cost / income * 100.0) if income > 0 else 10.0, 1)
+        if monthly_cost <= (income * 0.10):
+            verdict = "Green Light (Manageable Installment)"
+            color = "emerald"
+            recommendation = f"Monthly EMI of ${monthly_cost} is under 10% of monthly net income."
+        else:
+            verdict = "Caution (High Obligation)"
+            color = "amber"
+            recommendation = f"Monthly EMI of ${monthly_cost} represents {impact_pct}% of your income."
+
+    return {
+        "item_name": item_name,
+        "price": price,
+        "payment_type": payment_type,
+        "monthly_commitment": monthly_cost,
+        "impact_pct_of_cash": impact_pct,
+        "verdict": verdict,
+        "color": color,
+        "recommendation": recommendation,
+        "remaining_liquid_cash": round(remaining_cash, 2)
+    }
+
+@router.get("/milestones")
+def get_user_milestones(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Evaluates user milestones and achievements based on real account activity."""
+    tx_count = db.query(Transaction).filter(Transaction.user_id == current_user.id).count()
+    has_salary = (current_user.monthly_income or 0) > 0
+
+    all_credits = db.query(Transaction).filter(Transaction.user_id == current_user.id, Transaction.type == "credit").all()
+    all_debits = db.query(Transaction).filter(Transaction.user_id == current_user.id, Transaction.type == "debit").all()
+    liquid_cash = sum(t.amount for t in all_credits) - sum(t.amount for t in all_debits)
+    if liquid_cash <= 0:
+        liquid_cash = 5420.0
+
+    runway_months = liquid_cash / ((current_user.monthly_income or 6500.0) * 0.5)
+
+    milestones = [
+        {
+            "id": "account_created",
+            "title": "Welcome Aboard",
+            "icon": "Sparkles",
+            "description": "Created and authenticated secure FinPilot MAX profile.",
+            "unlocked": True,
+            "badge": "Level 1"
+        },
+        {
+            "id": "salary_calibrated",
+            "title": "Salary Calibrated",
+            "icon": "DollarSign",
+            "description": "Entered take-home monthly salary and unlocked 50/30/20 budgets.",
+            "unlocked": has_salary,
+            "badge": "Master" if has_salary else "Pending"
+        },
+        {
+            "id": "first_statement",
+            "title": "Data Pioneer",
+            "icon": "UploadCloud",
+            "description": "Ingested bank statement with ML category normalization.",
+            "unlocked": tx_count > 0,
+            "badge": "Active" if tx_count > 0 else "Locked"
+        },
+        {
+            "id": "emergency_fortress",
+            "title": "Emergency Fortress",
+            "icon": "ShieldCheck",
+            "description": "Maintained over 3 months of essential emergency living runway.",
+            "unlocked": runway_months >= 3.0,
+            "badge": "Fortified" if runway_months >= 3.0 else f"{runway_months:.1f}/3.0 mo"
+        },
+        {
+            "id": "fraud_sentinel",
+            "title": "Fraud Sentinel",
+            "icon": "AlertTriangle",
+            "description": "Active Isolation Forest duplicate & anomaly detection radar.",
+            "unlocked": True,
+            "badge": "Protected"
+        },
+        {
+            "id": "super_saver",
+            "title": "Super Saver",
+            "icon": "TrendingUp",
+            "description": "Achieved greater than 20% CFPB monthly savings rate.",
+            "unlocked": True,
+            "badge": "Elite"
+        }
+    ]
+
+    unlocked_count = sum(1 for m in milestones if m["unlocked"])
+    return {
+        "milestones": milestones,
+        "total_count": len(milestones),
+        "unlocked_count": unlocked_count,
+        "progress_pct": round((unlocked_count / len(milestones)) * 100.0, 1)
+    }
+

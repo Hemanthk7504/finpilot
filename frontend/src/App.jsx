@@ -14,6 +14,19 @@ import TransactionTable from "./components/TransactionTable";
 import AICoPilotDrawer from "./components/AICoPilotDrawer";
 import ReportsModal from "./components/ReportsModal";
 import SalaryModal from "./components/SalaryModal";
+import CurrencySwitcherModal from "./components/CurrencySwitcherModal";
+import SimulatorsView from "./components/SimulatorsView";
+
+import FIRECalculator from "./components/FIRECalculator";
+import DebtPayoffPlanner from "./components/DebtPayoffPlanner";
+import EmergencyRunwayCard from "./components/EmergencyRunwayCard";
+import AffordabilitySimulator from "./components/AffordabilitySimulator";
+import TaxEstimator from "./components/TaxEstimator";
+import SubscriptionAudit from "./components/SubscriptionAudit";
+import BudgetRebalancer from "./components/BudgetRebalancer";
+import BudgetRuleBuilder from "./components/BudgetRuleBuilder";
+import FinancialMilestones from "./components/FinancialMilestones";
+import NetWorthTracker from "./components/NetWorthTracker";
 
 import {
   fetchOverview,
@@ -41,7 +54,8 @@ import {
   UploadCloud,
   ArrowRight,
   Calendar,
-  Sparkles
+  Sparkles,
+  DollarSign
 } from "lucide-react";
 
 export default function App() {
@@ -49,6 +63,13 @@ export default function App() {
   const [currentView, setCurrentView] = useState("home");
   const [activeDashboardTab, setActiveDashboardTab] = useState("dashboard");
   const [currentUser, setCurrentUser] = useState(() => getStoredUser());
+
+  // Light / Dark Theme State (persisted & synced to <meta>)
+  const [theme, setTheme] = useState(() => localStorage.getItem("finpilot_theme") || "dark");
+
+  // Multi-Currency & Live FX
+  const [currentCurrency, setCurrentCurrency] = useState({ code: "USD", symbol: "$", name: "US Dollar", rate: 1.0 });
+  const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
 
   // Modals & Panels
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -69,7 +90,33 @@ export default function App() {
   const [goals, setGoals] = useState([]);
   const [transactions, setTransactions] = useState([]);
 
-  // Transition helper (Modern View Transitions API)
+  // Theme Synchronizer
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem("finpilot_theme", nextTheme);
+    if (nextTheme === "light") {
+      document.documentElement.classList.add("light");
+      document.documentElement.classList.remove("dark");
+    } else {
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light");
+    }
+    const meta = document.querySelector('meta[name="color-scheme"]');
+    if (meta) meta.content = nextTheme;
+  };
+
+  useEffect(() => {
+    if (theme === "light") {
+      document.documentElement.classList.add("light");
+      document.documentElement.classList.remove("dark");
+    } else {
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light");
+    }
+  }, [theme]);
+
+  // View Transition helper
   const navigateView = (newView) => {
     if (document.startViewTransition) {
       document.startViewTransition(() => {
@@ -126,7 +173,6 @@ export default function App() {
     setCurrentUser(user);
     loadAllData();
     navigateView("dashboard");
-    // Prompt real user to configure salary after login if not already configured
     if (!user.monthly_income || user.monthly_income <= 0) {
       setTimeout(() => setIsSalaryModalOpen(true), 400);
     }
@@ -143,9 +189,8 @@ export default function App() {
     setIsAuthModalOpen(true);
   };
 
-
   return (
-    <div className="min-h-screen bg-[#080C14] text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+    <div className={`min-h-screen ${theme === "light" ? "bg-[#F1F5F9] text-slate-900" : "bg-[#080C14] text-slate-100"} flex flex-col font-sans selection:bg-indigo-500 selection:text-white transition-colors duration-200`}>
       {/* VIEW 1: SEPARATE HOME / LANDING PAGE */}
       {currentView === "home" && (
         <HomePage
@@ -155,7 +200,7 @@ export default function App() {
         />
       )}
 
-      {/* VIEW 2: FULL-FEATURED DASHBOARD */}
+      {/* VIEW 2: FULL-FEATURED ADVANCED DASHBOARD */}
       {currentView === "dashboard" && (
         <>
           {/* Top Navbar */}
@@ -169,6 +214,10 @@ export default function App() {
             onOpenReport={() => setIsReportOpen(true)}
             onOpenUpload={() => setIsUploadModalOpen(true)}
             onOpenSalaryModal={() => setIsSalaryModalOpen(true)}
+            onOpenCurrencyModal={() => setIsCurrencyModalOpen(true)}
+            currentCurrency={currentCurrency}
+            theme={theme}
+            onToggleTheme={toggleTheme}
             onOpenAuth={() => openAuthWithMode("login")}
             onLogout={handleLogout}
           />
@@ -198,7 +247,6 @@ export default function App() {
                 </button>
               </div>
             )}
-
 
             {/* Global KPIs (always visible for financial clarity) */}
             <KPIOverview overview={overview} anomaliesCount={anomalies.length} />
@@ -230,9 +278,15 @@ export default function App() {
               </div>
             )}
 
-            {/* TAB 1: OVERVIEW DASHBOARD (Executive Bento Grid) */}
+            {/* TAB 1: OVERVIEW DASHBOARD (Executive Bento Grid + Advanced Simulators Preview) */}
             {activeDashboardTab === "dashboard" && (
               <div className="space-y-6">
+                {/* Emergency Runway Card & Affordability Quick Simulator */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                  <EmergencyRunwayCard overview={overview} />
+                  <AffordabilitySimulator overview={overview} currentUser={currentUser} />
+                </div>
+
                 {/* Bento Grid: 2 Columns on desktop */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                   {/* Left Column (8 / 12): Spending Charts & Recent Transactions */}
@@ -337,36 +391,54 @@ export default function App() {
               </div>
             )}
 
-            {/* TAB 2: PREDICTIVE FORECAST */}
+            {/* TAB 2: PREDICTIVE FORECAST & SUBSCRIPTIONS */}
             {activeDashboardTab === "forecast" && (
               <div className="space-y-6">
                 <ForecastView forecastData={forecastData} />
+                <SubscriptionAudit forecastData={forecastData} />
                 <AnomalyAlerts anomalies={anomalies} />
               </div>
             )}
 
-            {/* TAB 3: FINANCIAL HEALTH SCORE */}
+            {/* TAB 3: FINANCIAL HEALTH SCORE & MILESTONES */}
             {activeDashboardTab === "health-score" && (
               <div className="space-y-6">
                 <HealthScoreCard healthScoreData={healthScoreData} />
+                <FinancialMilestones />
               </div>
             )}
 
-            {/* TAB 4: BUDGETS & GOALS */}
+            {/* TAB 4: BUDGETS, GOALS & REBALANCING */}
             {activeDashboardTab === "budgets-goals" && (
               <div className="space-y-6">
                 <BudgetGoals budgets={budgets} goals={goals} onRefresh={() => loadAllData()} />
+                <BudgetRebalancer overview={overview} currentUser={currentUser} />
+                <BudgetRuleBuilder budgets={budgets} />
               </div>
             )}
 
-            {/* TAB 5: INVESTMENT GUIDANCE */}
+            {/* TAB 5: INVESTMENT GUIDANCE, FIRE & DEBT PAYOFF */}
             {activeDashboardTab === "investments" && (
               <div className="space-y-6">
+                <FIRECalculator overview={overview} currentUser={currentUser} />
+                <DebtPayoffPlanner />
                 <InvestmentGuidance />
+                <TaxEstimator overview={overview} currentUser={currentUser} />
+                <NetWorthTracker overview={overview} />
               </div>
             )}
 
-            {/* TAB 6: TRANSACTION LEDGER */}
+            {/* TAB 6: DEDICATED ADVANCED SIMULATORS & TOOLS SUITE */}
+            {activeDashboardTab === "simulators" && (
+              <SimulatorsView
+                overview={overview}
+                currentUser={currentUser}
+                forecastData={forecastData}
+                budgets={budgets}
+              />
+            )}
+
+            {/* TAB 7: TRANSACTION LEDGER */}
             {activeDashboardTab === "ledger" && (
               <div className="space-y-6">
                 <TransactionTable transactions={transactions} />
@@ -387,7 +459,7 @@ export default function App() {
 
           {/* Footer */}
           <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
-            <p>FinPilot MAX • AI-Powered Intelligent Personal Finance Advisor • Built with FastAPI, Scikit-Learn & React</p>
+            <p>FinPilot MAX • AI-Powered Intelligent Personal Finance Advisor • Built with FastAPI, Scikit-Learn &amp; React</p>
           </footer>
         </>
       )}
@@ -410,6 +482,12 @@ export default function App() {
         }}
       />
 
+      <CurrencySwitcherModal
+        isOpen={isCurrencyModalOpen}
+        onClose={() => setIsCurrencyModalOpen(false)}
+        currentCurrency={currentCurrency}
+        onSelectCurrency={(curr) => setCurrentCurrency(curr)}
+      />
 
       {isUploadModalOpen && (
         <StatementUploader

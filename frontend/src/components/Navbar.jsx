@@ -15,7 +15,11 @@ import {
   ListOrdered,
   DollarSign,
   Edit3,
-  CheckCircle2
+  CheckCircle2,
+  Sun,
+  Moon,
+  Globe2,
+  Cpu
 } from "lucide-react";
 
 export default function Navbar({
@@ -28,6 +32,10 @@ export default function Navbar({
   onOpenReport,
   onOpenUpload,
   onOpenSalaryModal,
+  onOpenCurrencyModal,
+  currentCurrency,
+  theme,
+  onToggleTheme,
   onOpenAuth,
   onLogout
 }) {
@@ -37,6 +45,8 @@ export default function Navbar({
   const healthScore = overview?.health_score ?? 81.2;
   const healthGrade = overview?.health_grade ?? "A";
   const monthlySalary = currentUser?.monthly_income ?? overview?.monthly_income ?? 0;
+  const currencySymbol = currentCurrency?.symbol || "$";
+  const currencyCode = currentCurrency?.code || "USD";
 
   const getScoreColor = (score) => {
     if (score >= 80) return "text-emerald-400 border-emerald-500/30 bg-emerald-500/10";
@@ -62,6 +72,7 @@ export default function Navbar({
     { id: "health-score", label: "Health Score", icon: Shield },
     { id: "budgets-goals", label: "Budgets & Goals", icon: Target },
     { id: "investments", label: "Investments", icon: LineChart },
+    { id: "simulators", label: "Simulators & Tools", icon: Cpu },
     { id: "ledger", label: "Transactions", icon: ListOrdered },
   ];
 
@@ -96,8 +107,35 @@ export default function Navbar({
             </div>
           </div>
 
-          {/* Right: Salary Pill, Actions & User Account */}
+          {/* Right: Currency, Theme Toggle, Salary Pill, Actions & User Account */}
           <div className="flex items-center gap-2 sm:gap-2.5 flex-nowrap shrink-0">
+            {/* Global Currency Switcher Pill */}
+            <button
+              type="button"
+              onClick={onOpenCurrencyModal}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900/90 hover:bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-300 transition shrink-0 whitespace-nowrap"
+              title="Change Workspace Currency & Live FX Rates"
+            >
+              <Globe2 className="h-3.5 w-3.5 text-indigo-400" />
+              <span className="font-numeric font-bold">{currencySymbol}</span>
+              <span className="text-[10px] text-slate-400">{currencyCode}</span>
+            </button>
+
+            {/* Light / Dark Theme Toggle Button */}
+            <button
+              type="button"
+              onClick={onToggleTheme}
+              className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-800 bg-slate-900/90 hover:bg-slate-800 text-slate-300 hover:text-amber-400 transition shrink-0"
+              title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
+              aria-label="Toggle Color Theme"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-4 w-4 text-amber-400 transition-transform hover:rotate-45" />
+              ) : (
+                <Moon className="h-4 w-4 text-indigo-400 transition-transform hover:-rotate-12" />
+              )}
+            </button>
+
             {/* Monthly Salary Setup Pill */}
             {currentUser && (
               <button
@@ -109,7 +147,7 @@ export default function Navbar({
                 <DollarSign className="h-3.5 w-3.5 text-indigo-400" />
                 <span className="hidden md:inline">Salary:</span>
                 <strong className="text-white font-numeric font-bold">
-                  {monthlySalary > 0 ? `$${monthlySalary.toLocaleString()}/mo` : "Set Salary"}
+                  {monthlySalary > 0 ? `${currencySymbol}${monthlySalary.toLocaleString()}/mo` : "Set Salary"}
                 </strong>
                 <Edit3 className="h-3 w-3 text-indigo-400 ml-0.5" />
               </button>
@@ -197,7 +235,23 @@ export default function Navbar({
                         <span>Monthly Salary</span>
                       </span>
                       <strong className="text-indigo-400 font-numeric">
-                        {monthlySalary > 0 ? `$${monthlySalary.toLocaleString()}` : "Not Set"}
+                        {monthlySalary > 0 ? `${currencySymbol}${monthlySalary.toLocaleString()}` : "Not Set"}
+                      </strong>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onOpenCurrencyModal();
+                      }}
+                      className="w-full flex items-center justify-between rounded-xl px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Globe2 className="h-3.5 w-3.5 text-cyan-400" />
+                        <span>Currency / FX</span>
+                      </span>
+                      <strong className="text-cyan-400 font-numeric">
+                        {currencyCode} ({currencySymbol})
                       </strong>
                     </button>
 
