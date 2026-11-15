@@ -16,16 +16,16 @@ def main():
         cwd=root_dir
     )
 
-    print("\n[2/2] Starting React Vite Frontend on http://localhost:9000 ...")
+    print("\n[2/2] Starting React Vite Frontend on http://localhost:7000 ...")
     frontend_cmd = "npm.cmd" if sys.platform == "win32" else "npm"
     frontend_proc = subprocess.Popen(
-        [frontend_cmd, "run", "dev", "--", "--port", "9000"],
+        [frontend_cmd, "run", "dev", "--", "--port", "7000"],
         cwd=frontend_dir
     )
 
     print("\n" + "=" * 65)
     print("  🚀 FinPilot MAX is running successfully!")
-    print("  🌐 Frontend Dashboard: http://localhost:9000")
+    print("  🌐 Frontend Dashboard: http://localhost:7000")
     print("  📖 Backend API Docs:   http://localhost:8005/docs")
     print("=" * 65)
     print("  Press Ctrl+C to terminate both servers...\n")
@@ -38,7 +38,7 @@ def main():
                 backend_proc = subprocess.Popen([sys.executable, "backend/run.py"], cwd=root_dir)
             if frontend_proc.poll() is not None:
                 print("Frontend dev server stopped. Restarting...")
-                frontend_proc = subprocess.Popen([frontend_cmd, "run", "dev", "--", "--port", "9000"], cwd=frontend_dir)
+                frontend_proc = subprocess.Popen([frontend_cmd, "run", "dev", "--", "--port", "7000"], cwd=frontend_dir)
     except KeyboardInterrupt:
         print("\nStopping FinPilot MAX services...")
         backend_proc.terminate()
