@@ -31,8 +31,14 @@ def main():
     print("  Press Ctrl+C to terminate both servers...\n")
 
     try:
-        backend_proc.wait()
-        frontend_proc.wait()
+        while True:
+            time.sleep(2)
+            if backend_proc.poll() is not None:
+                print("Backend server stopped. Restarting...")
+                backend_proc = subprocess.Popen([sys.executable, "backend/run.py"], cwd=root_dir)
+            if frontend_proc.poll() is not None:
+                print("Frontend dev server stopped. Restarting...")
+                frontend_proc = subprocess.Popen([frontend_cmd, "run", "dev", "--", "--port", "9000"], cwd=frontend_dir)
     except KeyboardInterrupt:
         print("\nStopping FinPilot MAX services...")
         backend_proc.terminate()
