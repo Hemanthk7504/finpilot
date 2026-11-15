@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Lock, Mail, User, Sparkles, Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
 import { loginUser, registerUser } from "../services/api";
 
-export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode = "login" }) {
+export default function AuthModal({ isOpen, onClose, onAuthSuccess, onSuccess, initialMode = "login" }) {
   const [mode, setMode] = useState(initialMode); // 'login' or 'register'
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -10,6 +10,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setMode(initialMode);
+    setErrorMsg("");
+  }, [initialMode, isOpen]);
 
   if (!isOpen) return null;
 
@@ -25,12 +30,16 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode 
       } else {
         // Register with pure credentials; salary is configured after login
         data = await registerUser({
-          name,
-          email,
+          name: name.trim() || "User",
+          email: email.trim().toLowerCase(),
           password,
         });
       }
-      if (onAuthSuccess) onAuthSuccess(data.user);
+      
+      const successCb = onAuthSuccess || onSuccess;
+      if (successCb) {
+        successCb(data.user);
+      }
       onClose();
     } catch (err) {
       setErrorMsg(err.message || "Authentication failed. Please verify your credentials.");

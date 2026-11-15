@@ -88,7 +88,9 @@ export default function BudgetGoals({ budgets = [], goals = [], onRefreshData })
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {budgets.map((b) => {
             const isEditing = editingBudgetId === b.id;
-            const pct = b.spent_percentage;
+            const spent = b.spent_amount || 0;
+            const limit = b.monthly_limit || 1;
+            const pct = typeof b.spent_percentage === "number" ? b.spent_percentage : (spent / limit) * 100;
             const isExceeded = pct >= 100;
             const isWarning = pct >= 80 && pct < 100;
 
@@ -107,7 +109,7 @@ export default function BudgetGoals({ budgets = [], goals = [], onRefreshData })
                   <div>
                     <h4 className="font-semibold text-sm text-white">{b.category_name}</h4>
                     <span className="text-[11px] text-slate-400 block mt-0.5">
-                      Spent: <strong className="text-white">{formatINR(b.spent_amount)}</strong> of {formatINR(b.monthly_limit)}
+                      Spent: <strong className="text-white">{formatINR(spent)}</strong> of {formatINR(limit)}
                     </span>
                   </div>
 
@@ -117,7 +119,7 @@ export default function BudgetGoals({ budgets = [], goals = [], onRefreshData })
                         setEditingBudgetId(null);
                       } else {
                         setEditingBudgetId(b.id);
-                        setNewBudgetLimit(b.monthly_limit.toString());
+                        setNewBudgetLimit(limit.toString());
                       }
                     }}
                     className="text-slate-400 hover:text-white p-1"
@@ -151,7 +153,7 @@ export default function BudgetGoals({ budgets = [], goals = [], onRefreshData })
                         className={`h-full rounded-full transition-all ${
                           isExceeded ? "bg-rose-500" : isWarning ? "bg-amber-500" : "bg-indigo-500"
                         }`}
-                        style={{ width: `${Math.min(100, pct)}%` }}
+                        style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
                       ></div>
                     </div>
 
@@ -160,9 +162,9 @@ export default function BudgetGoals({ budgets = [], goals = [], onRefreshData })
                         {pct.toFixed(0)}% utilized
                       </span>
                       <span className="text-slate-400 font-numeric">
-                        {b.monthly_limit > b.spent_amount
-                          ? `${formatINR(b.monthly_limit - b.spent_amount, { decimals: 0 })} left`
-                          : `${formatINR(b.spent_amount - b.monthly_limit, { decimals: 0 })} over limit`}
+                        {limit > spent
+                          ? `${formatINR(limit - spent, { decimals: 0 })} left`
+                          : `${formatINR(spent - limit, { decimals: 0 })} over limit`}
                       </span>
                     </div>
                   </>
@@ -228,7 +230,11 @@ export default function BudgetGoals({ budgets = [], goals = [], onRefreshData })
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {goals.map((goal) => {
-              const pct = goal.progress_percentage;
+              const current = goal.current_amount || 0;
+              const target = goal.target_amount || 1;
+              const pct = typeof goal.progress_percentage === "number" ? goal.progress_percentage : (current / target) * 100;
+              const monthlyReq = goal.monthly_required || 0;
+
               return (
                 <div
                   key={goal.id}
@@ -249,22 +255,22 @@ export default function BudgetGoals({ budgets = [], goals = [], onRefreshData })
                     </div>
 
                     <div className="mt-4 flex items-baseline justify-between text-xs">
-                      <span className="font-bold text-white text-base font-numeric">{formatINR(goal.current_amount)}</span>
-                      <span className="text-slate-400 font-numeric">Target: {formatINR(goal.target_amount)}</span>
+                      <span className="font-bold text-white text-base font-numeric">{formatINR(current)}</span>
+                      <span className="text-slate-400 font-numeric">Target: {formatINR(target)}</span>
                     </div>
 
                     {/* Progress Bar */}
                     <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-800">
                       <div
                         className="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 rounded-full"
-                        style={{ width: `${Math.min(100, pct)}%` }}
+                        style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
                       ></div>
                     </div>
                   </div>
 
                   <div className="mt-5 pt-3 border-t border-slate-700/50 flex items-center justify-between text-xs">
                     <span className="text-slate-400 text-[11px]">
-                      Required: <strong className="text-slate-200 font-numeric">{formatINR(goal.monthly_required, { decimals: 0 })}/mo</strong>
+                      Required: <strong className="text-slate-200 font-numeric">{formatINR(monthlyReq, { decimals: 0 })}/mo</strong>
                     </span>
 
                     <button

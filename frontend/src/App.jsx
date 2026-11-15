@@ -49,10 +49,25 @@ import {
 import { Calendar, DollarSign, ArrowRight, Sparkles } from "lucide-react";
 
 export default function App() {
-  // Main View: 'home' (Landing Page) vs 'dashboard' (Finance Advisor Portal)
-  const [currentView, setCurrentView] = useState("home");
-  const [activeDashboardTab, setActiveDashboardTab] = useState("dashboard");
+  // Authentication State
   const [currentUser, setCurrentUser] = useState(() => getStoredUser());
+
+  // Main View: When user is authenticated, ALWAYS show dashboard; otherwise show home
+  const [currentView, setCurrentView] = useState(() => (getStoredUser() ? "dashboard" : "home"));
+
+  // URL Hash Route Resolver
+  const getTabFromHash = () => {
+    const hash = window.location.hash.replace(/^#\/?/, "").toLowerCase();
+    if (["ledger", "transactions", "transaction"].includes(hash)) return "ledger";
+    if (["budgets", "goals", "budgets-goals"].includes(hash)) return "budgets-goals";
+    if (["forecast", "bills", "recurring"].includes(hash)) return "forecast";
+    if (["health", "health-score", "score"].includes(hash)) return "health-score";
+    if (["investments", "portfolio", "sip"].includes(hash)) return "investments";
+    if (["simulators", "tools", "fire"].includes(hash)) return "simulators";
+    return "dashboard";
+  };
+
+  const [activeDashboardTab, setActiveDashboardTab] = useState(() => getTabFromHash());
 
   // Light / Dark Theme State (persisted & synced to <meta>)
   const [theme, setTheme] = useState(() => localStorage.getItem("finpilot_theme") || "dark");
@@ -111,6 +126,25 @@ export default function App() {
     }
   }, [theme]);
 
+  // Handle URL hash changes (browser back/forward & direct links)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const tab = getTabFromHash();
+      setActiveDashboardTab(tab);
+      if (getStoredUser()) {
+        setCurrentView("dashboard");
+      }
+    };
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  const handleSelectTab = (tabId) => {
+    setActiveDashboardTab(tabId);
+    window.location.hash = `#${tabId}`;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   // View Transition helper
   const navigateView = (newView) => {
     if (document.startViewTransition) {
@@ -152,25 +186,43 @@ export default function App() {
     }
   };
 
+  // Session validation: If logged in, stay on dashboard permanently unless signed out
   useEffect(() => {
+    const stored = getStoredUser();
+    if (stored) {
+      setCurrentUser(stored);
+      setCurrentView("dashboard");
+      loadAllData();
+    }
+
     getCurrentUser()
       .then((user) => {
         if (user) {
           setCurrentUser(user);
+          setCurrentView("dashboard");
           loadAllData();
         } else {
+          // Token expired or invalid
+          setCurrentUser(null);
+          setCurrentView("home");
           setIsLoading(false);
         }
       })
       .catch(() => {
+        if (!getStoredUser()) {
+          setCurrentUser(null);
+          setCurrentView("home");
+        }
         setIsLoading(false);
       });
   }, []);
 
   const handleAuthSuccess = (user) => {
     setCurrentUser(user);
+    setCurrentView("dashboard");
+    window.location.hash = "#dashboard";
+    setActiveDashboardTab("dashboard");
     loadAllData();
-    navigateView("dashboard");
     if (!user.monthly_income || user.monthly_income <= 0) {
       setTimeout(() => setIsSalaryModalOpen(true), 400);
     }
@@ -179,7 +231,9 @@ export default function App() {
   const handleLogout = () => {
     logoutUser();
     setCurrentUser(null);
-    navigateView("home");
+    setCurrentView("home");
+    setActiveDashboardTab("dashboard");
+    window.location.hash = "";
   };
 
   const openAuthWithMode = (mode = "login") => {
@@ -187,18 +241,21 @@ export default function App() {
     setIsAuthModalOpen(true);
   };
 
+  // Enforce: without signout, home page should NEVER be shown if user is authenticated
+  const showDashboard = !!currentUser || currentView === "dashboard";
+
   return (
     <div
       className={`min-h-screen ${
         theme === "light" ? "bg-[#F8FAFC] text-slate-900" : "bg-[#070B14] text-slate-100"
       } font-sans selection:bg-indigo-500 selection:text-white transition-colors duration-200`}
     >
-      {/* VIEW 1: HOME / LANDING PAGE */}
-      {currentView === "home" && (
+      {/* VIEW 1: HOME / LANDING PAGE (Only shown when NOT logged in) */}
+      {!showDashboard && (
         <HomePage
           onLaunchApp={() => {
             if (currentUser) {
-              navigateView("dashboard");
+              setCurrentView("dashboard");
             } else {
               openAuthWithMode("login");
             }
@@ -209,12 +266,12 @@ export default function App() {
       )}
 
       {/* VIEW 2: FULL-FEATURED ADVANCED DASHBOARD WITH SIDEBAR & HEADER */}
-      {currentView === "dashboard" && (
+      {showDashboard && (
         <div className="flex h-screen overflow-hidden">
           {/* Left Sidebar */}
           <Sidebar
             activeTab={activeDashboardTab}
-            onSelectTab={(tabId) => setActiveDashboardTab(tabId)}
+            onSelectTab={handleSelectTab}
             onOpenChat={() => setIsChatOpen(true)}
             onOpenSettings={() => setIsSalaryModalOpen(true)}
             onLogout={handleLogout}
@@ -290,12 +347,12 @@ export default function App() {
                       <CashFlowTrendCard overview={overview} transactions={transactions} />
                     </div>
 
-                    {/* Expense Breakdown Donut: 3.5 of 12 columns */}
+                    {/* Expense Breakdown Donut: 3 of 12 columns */}
                     <div className="lg:col-span-3 flex flex-col">
                       <ExpenseBreakdownCard categoryData={categoryData} />
                     </div>
 
-                    {/* AI Insights Card: 2.5 of 12 columns */}
+                    {/* AI Insights Card: 3 of 12 columns */}
                     <div className="lg:col-span-3 flex flex-col">
                       <AIInsightsCard overview={overview} onOpenChat={() => setIsChatOpen(true)} />
                     </div>
@@ -307,10 +364,10 @@ export default function App() {
                   {/* Quick Actions Row */}
                   <QuickActions
                     onAddTransaction={() => setIsAddTxnOpen(true)}
-                    onSetBudget={() => setActiveDashboardTab("budgets-goals")}
-                    onCreateGoal={() => setActiveDashboardTab("budgets-goals")}
-                    onBillReminder={() => setActiveDashboardTab("forecast")}
-                    onRunSimulator={() => setActiveDashboardTab("simulators")}
+                    onSetBudget={() => handleSelectTab("budgets-goals")}
+                    onCreateGoal={() => handleSelectTab("budgets-goals")}
+                    onBillReminder={() => handleSelectTab("forecast")}
+                    onRunSimulator={() => handleSelectTab("simulators")}
                     onOpenAICoPilot={() => setIsChatOpen(true)}
                     theme={theme}
                   />
@@ -445,6 +502,7 @@ export default function App() {
           isOpen={isAuthModalOpen}
           onClose={() => setIsAuthModalOpen(false)}
           initialMode={authInitialMode}
+          onAuthSuccess={handleAuthSuccess}
           onSuccess={handleAuthSuccess}
         />
       )}
