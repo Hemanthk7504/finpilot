@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Search, Filter, AlertTriangle, ArrowUpDown, Tag, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Filter, AlertTriangle, ArrowUpDown, Tag, ChevronLeft, ChevronRight, PlusCircle, CheckCircle2 } from "lucide-react";
+import { formatINR } from "../utils/currency";
 
-export default function TransactionTable({ transactions = [], onUpdateCategory }) {
+export default function TransactionTable({ transactions = [], onUpdateCategory, onAddTransaction }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
@@ -32,14 +33,29 @@ export default function TransactionTable({ transactions = [], onUpdateCategory }
       {/* Header and Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h3 className="text-base font-bold text-white">Transaction Ledger</h3>
-          <p className="text-xs text-slate-400">
-            Showing {filtered.length} of {transactions.length} total recorded transactions
+          <div className="flex items-center gap-3">
+            <h3 className="text-base font-bold text-white">Transaction Ledger</h3>
+            <span className="rounded-full bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 text-[11px] font-bold text-indigo-400">
+              {filtered.length} Entries (INR)
+            </span>
+          </div>
+          <p className="text-xs text-slate-400 mt-1">
+            Real-time ML-categorized transactions from verified accounts & statements.
           </p>
         </div>
 
-        {/* Filters */}
+        {/* Action Button & Filters */}
         <div className="flex flex-wrap items-center gap-2 text-xs">
+          {onAddTransaction && (
+            <button
+              onClick={onAddTransaction}
+              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 shadow-md shadow-indigo-600/30 transition hover:scale-105 active:scale-95"
+            >
+              <PlusCircle className="h-3.5 w-3.5" />
+              <span>Add Transaction</span>
+            </button>
+          )}
+
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
@@ -51,7 +67,7 @@ export default function TransactionTable({ transactions = [], onUpdateCategory }
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="rounded-lg border border-slate-700 bg-slate-800/80 pl-8 pr-3 py-1.5 text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 w-44"
+              className="rounded-lg border border-slate-700 bg-slate-800/80 pl-8 pr-3 py-1.5 text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 w-40"
             />
           </div>
 
@@ -102,16 +118,16 @@ export default function TransactionTable({ transactions = [], onUpdateCategory }
         </div>
       </div>
 
-      {/* Modern Accessible Table Container */}
+      {/* Accessible Table Container */}
       <div tabIndex={0} role="region" aria-label="Transactions ledger table" className="table-wrapper rounded-xl border border-slate-800">
         <table>
           <thead>
             <tr className="text-left text-xs font-semibold text-slate-400 border-b border-slate-800">
               <th className="py-3 px-4">Date</th>
-              <th className="py-3 px-4">Merchant / Details</th>
+              <th className="py-3 px-4">Merchant / Narration</th>
               <th className="py-3 px-4">Category</th>
-              <th className="py-3 px-4">Status / Flags</th>
-              <th className="py-3 px-4 text-right">Amount</th>
+              <th className="py-3 px-4">Status / Fraud Flags</th>
+              <th className="py-3 px-4 text-right">Amount (₹)</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60 text-xs">
@@ -121,13 +137,13 @@ export default function TransactionTable({ transactions = [], onUpdateCategory }
                 const isCredit = txn.type === "credit";
 
                 return (
-                  <tr key={txn.id} className="transition">
+                  <tr key={txn.id} className="transition hover:bg-slate-800/40">
                     <td className="py-3 px-4 text-slate-400 font-mono text-[11px] whitespace-nowrap">
                       {dateStr}
                     </td>
                     <td className="py-3 px-4">
                       <div className="font-semibold text-white">{txn.clean_merchant}</div>
-                      <div className="text-[10px] text-slate-400 truncate max-w-xs">{txn.raw_narration}</div>
+                      <div className="text-[10px] text-slate-400 truncate max-w-sm">{txn.raw_narration}</div>
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap">
                       <span className="inline-flex items-center gap-1 rounded-md bg-slate-800 border border-slate-700/80 px-2 py-0.5 text-[11px] text-slate-300">
@@ -138,23 +154,26 @@ export default function TransactionTable({ transactions = [], onUpdateCategory }
                     <td className="py-3 px-4 whitespace-nowrap">
                       {txn.is_anomaly ? (
                         <span
-                          className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-400"
-                          title={txn.anomaly_reason || "Unusual transaction"}
+                          className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-400 cursor-help"
+                          title={txn.anomaly_reason || "Suspicious or duplicate transaction"}
                         >
                           <AlertTriangle className="h-3 w-3" />
-                          Suspicious
+                          <span>Flagged Duplicate</span>
                         </span>
                       ) : txn.is_recurring ? (
                         <span className="inline-flex items-center rounded-md bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 text-[10px] text-indigo-300">
                           Recurring
                         </span>
                       ) : (
-                        <span className="text-[10px] text-slate-400">Regular</span>
+                        <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400">
+                          <CheckCircle2 className="h-2.5 w-2.5" />
+                          <span>Verified</span>
+                        </span>
                       )}
                     </td>
                     <td className="py-3 px-4 text-right whitespace-nowrap">
-                      <span className={`font-bold font-mono text-sm ${isCredit ? "text-emerald-400" : "text-white"}`}>
-                        {isCredit ? "+" : "-"}${txn.amount.toFixed(2)}
+                      <span className={`font-bold font-numeric text-sm ${isCredit ? "text-emerald-400" : "text-white"}`}>
+                        {formatINR(txn.amount, { showSign: true, decimals: 2 })}
                       </span>
                     </td>
                   </tr>
@@ -164,7 +183,7 @@ export default function TransactionTable({ transactions = [], onUpdateCategory }
               <tr>
                 <td colSpan={5} className="py-10 text-center text-slate-400">
                   {transactions.length === 0
-                    ? "No transactions recorded yet in this account. Click 'Import Statement' in the navigation bar to upload your bank statement."
+                    ? "No transactions recorded yet in this account. Click 'Add Transaction' or 'Import Bank Statement' to begin."
                     : "No transactions match your current filters."}
                 </td>
               </tr>

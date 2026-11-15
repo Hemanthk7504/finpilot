@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { AlertTriangle, ShieldCheck, Check, Info, AlertOctagon, ChevronDown, ChevronUp } from "lucide-react";
+import { formatINR } from "../utils/currency";
 
 export default function AnomalyAlerts({ anomalies = [], onDismiss }) {
   const [dismissedIds, setDismissedIds] = useState(new Set());
@@ -63,7 +64,7 @@ export default function AnomalyAlerts({ anomalies = [], onDismiss }) {
 
               <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-800">
                 <span className="text-sm font-bold font-numeric text-rose-400">
-                  ${typeof ano.amount === 'number' ? ano.amount.toFixed(2) : ano.amount}
+                  {formatINR(ano.amount)}
                 </span>
                 <button
                   onClick={() => handleDismiss(ano.id)}

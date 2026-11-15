@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { Target, PiggyBank, Plus, CheckCircle, AlertCircle, Edit2, Calendar } from "lucide-react";
+import { Target, PiggyBank, Plus, Check, Edit2, AlertCircle, ArrowUpRight } from "lucide-react";
 import { createOrUpdateBudget, createGoal, updateGoalDeposit } from "../services/api";
+import { formatINR } from "../utils/currency";
 
-export default function BudgetGoals({ budgets = [], goals = [], onRefresh }) {
+export default function BudgetGoals({ budgets = [], goals = [], onRefreshData }) {
   const [activeTab, setActiveTab] = useState("budgets");
   const [isAddingGoal, setIsAddingGoal] = useState(false);
   const [newGoalTitle, setNewGoalTitle] = useState("");
@@ -16,10 +17,9 @@ export default function BudgetGoals({ budgets = [], goals = [], onRefresh }) {
     try {
       await createOrUpdateBudget(categoryName, parseFloat(newBudgetLimit));
       setEditingBudgetId(null);
-      setNewBudgetLimit("");
-      if (onRefresh) onRefresh();
+      if (onRefreshData) onRefreshData();
     } catch (err) {
-      alert(err.message);
+      console.error(err);
     }
   };
 
@@ -29,70 +29,66 @@ export default function BudgetGoals({ budgets = [], goals = [], onRefresh }) {
     try {
       await createGoal({
         title: newGoalTitle,
+        category: "Savings",
         target_amount: parseFloat(newGoalTarget),
-        current_amount: parseFloat(newGoalCurrent || 0),
-        category: "General",
+        current_amount: parseFloat(newGoalCurrent || "0"),
+        target_date: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
       });
       setIsAddingGoal(false);
       setNewGoalTitle("");
       setNewGoalTarget("");
       setNewGoalCurrent("");
-      if (onRefresh) onRefresh();
+      if (onRefreshData) onRefreshData();
     } catch (err) {
-      alert(err.message);
+      console.error(err);
     }
   };
 
   const handleDepositToGoal = async (goal) => {
-    const depositAmt = 150.0;
     try {
-      await updateGoalDeposit(goal.id, goal.current_amount + depositAmt);
-      if (onRefresh) onRefresh();
+      const updated = goal.current_amount + 5000;
+      await updateGoalDeposit(goal.id, updated);
+      if (onRefreshData) onRefreshData();
     } catch (err) {
-      alert(err.message);
+      console.error(err);
     }
   };
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-sm">
-      {/* Header & Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-sm space-y-6">
+      {/* Tab Switcher */}
+      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
         <div>
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Target className="h-4 w-4 text-indigo-400" />
-            Budget Envelopes & Virtual Savings Jars
-          </h3>
-          <p className="text-xs text-slate-400">
-            Track real-time spend against custom envelopes and progress toward your major life milestones.
-          </p>
+          <h3 className="text-base font-bold text-white">Budgets & Goal Jars</h3>
+          <p className="text-xs text-slate-400">Manage monthly envelope limits and automated savings milestones in INR (₹)</p>
         </div>
 
-        <div className="flex items-center gap-1 rounded-xl bg-slate-800/80 p-1 border border-slate-700/60 self-start sm:self-auto">
+        <div className="flex items-center rounded-xl bg-slate-800/80 p-1 border border-slate-700/60">
           <button
             onClick={() => setActiveTab("budgets")}
             className={`rounded-lg px-3 py-1 text-xs font-semibold transition ${
-              activeTab === "budgets" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
+              activeTab === "budgets" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
             }`}
           >
-            Category Budgets ({budgets.length})
+            Category Envelopes ({budgets.length})
           </button>
           <button
             onClick={() => setActiveTab("goals")}
             className={`rounded-lg px-3 py-1 text-xs font-semibold transition ${
-              activeTab === "goals" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
+              activeTab === "goals" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-400 hover:text-white"
             }`}
           >
-            Savings Goals ({goals.length})
+            Savings Jars ({goals.length})
           </button>
         </div>
       </div>
 
       {/* TAB 1: BUDGETS */}
       {activeTab === "budgets" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {budgets.map((b) => {
             const isEditing = editingBudgetId === b.id;
-            const pct = b.percentage;
+            const pct = b.spent_percentage;
             const isExceeded = pct >= 100;
             const isWarning = pct >= 80 && pct < 100;
 
@@ -111,7 +107,7 @@ export default function BudgetGoals({ budgets = [], goals = [], onRefresh }) {
                   <div>
                     <h4 className="font-semibold text-sm text-white">{b.category_name}</h4>
                     <span className="text-[11px] text-slate-400 block mt-0.5">
-                      Spent: <strong className="text-white">${b.spent_amount.toLocaleString()}</strong> of ${b.monthly_limit.toLocaleString()}
+                      Spent: <strong className="text-white">{formatINR(b.spent_amount)}</strong> of {formatINR(b.monthly_limit)}
                     </span>
                   </div>
 
@@ -137,7 +133,7 @@ export default function BudgetGoals({ budgets = [], goals = [], onRefresh }) {
                       type="number"
                       value={newBudgetLimit}
                       onChange={(e) => setNewBudgetLimit(e.target.value)}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-white focus:outline-none focus:border-indigo-500"
+                      className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-white focus:outline-none focus:border-indigo-500 font-numeric"
                       placeholder="New limit"
                     />
                     <button
@@ -163,10 +159,10 @@ export default function BudgetGoals({ budgets = [], goals = [], onRefresh }) {
                       <span className={isExceeded ? "text-rose-400 font-bold" : isWarning ? "text-amber-400 font-medium" : "text-slate-400"}>
                         {pct.toFixed(0)}% utilized
                       </span>
-                      <span className="text-slate-400">
+                      <span className="text-slate-400 font-numeric">
                         {b.monthly_limit > b.spent_amount
-                          ? `$${(b.monthly_limit - b.spent_amount).toFixed(0)} remaining`
-                          : `$${(b.spent_amount - b.monthly_limit).toFixed(0)} over limit`}
+                          ? `${formatINR(b.monthly_limit - b.spent_amount, { decimals: 0 })} left`
+                          : `${formatINR(b.spent_amount - b.monthly_limit, { decimals: 0 })} over limit`}
                       </span>
                     </div>
                   </>
@@ -197,7 +193,7 @@ export default function BudgetGoals({ budgets = [], goals = [], onRefresh }) {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <input
                   type="text"
-                  placeholder="Goal Title (e.g., Home Downpayment)"
+                  placeholder="Goal Title (e.g. Home Downpayment)"
                   value={newGoalTitle}
                   onChange={(e) => setNewGoalTitle(e.target.value)}
                   required
@@ -205,18 +201,18 @@ export default function BudgetGoals({ budgets = [], goals = [], onRefresh }) {
                 />
                 <input
                   type="number"
-                  placeholder="Target Amount ($)"
+                  placeholder="Target Amount (₹)"
                   value={newGoalTarget}
                   onChange={(e) => setNewGoalTarget(e.target.value)}
                   required
-                  className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-numeric"
                 />
                 <input
                   type="number"
-                  placeholder="Current Savings ($)"
+                  placeholder="Current Savings (₹)"
                   value={newGoalCurrent}
                   onChange={(e) => setNewGoalCurrent(e.target.value)}
-                  className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-numeric"
                 />
               </div>
               <div className="flex justify-end">
@@ -249,12 +245,12 @@ export default function BudgetGoals({ budgets = [], goals = [], onRefresh }) {
                           <span className="text-[10px] text-slate-400 uppercase tracking-wider">{goal.category}</span>
                         </div>
                       </div>
-                      <span className="text-xs font-bold text-emerald-400">{pct.toFixed(0)}%</span>
+                      <span className="text-xs font-bold text-emerald-400 font-numeric">{pct.toFixed(0)}%</span>
                     </div>
 
                     <div className="mt-4 flex items-baseline justify-between text-xs">
-                      <span className="font-bold text-white text-base">${goal.current_amount.toLocaleString()}</span>
-                      <span className="text-slate-400">Target: ${goal.target_amount.toLocaleString()}</span>
+                      <span className="font-bold text-white text-base font-numeric">{formatINR(goal.current_amount)}</span>
+                      <span className="text-slate-400 font-numeric">Target: {formatINR(goal.target_amount)}</span>
                     </div>
 
                     {/* Progress Bar */}
@@ -268,14 +264,14 @@ export default function BudgetGoals({ budgets = [], goals = [], onRefresh }) {
 
                   <div className="mt-5 pt-3 border-t border-slate-700/50 flex items-center justify-between text-xs">
                     <span className="text-slate-400 text-[11px]">
-                      Required: <strong className="text-slate-200">${goal.monthly_required.toFixed(0)}/mo</strong>
+                      Required: <strong className="text-slate-200 font-numeric">{formatINR(goal.monthly_required, { decimals: 0 })}/mo</strong>
                     </span>
 
                     <button
                       onClick={() => handleDepositToGoal(goal)}
                       className="rounded-md bg-emerald-500/10 border border-emerald-500/30 px-2 py-1 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/20 transition"
                     >
-                      + Deposit $150
+                      + Deposit ₹5,000
                     </button>
                   </div>
                 </div>

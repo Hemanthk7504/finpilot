@@ -3,10 +3,10 @@
 @layer base {
   :root {
     color-scheme: light dark;
-    --primary: #4F46E5;
-    --primary-hover: #4338CA;
-    --bg-dark: #080C14;
-    --card-dark: #0F172A;
+    --primary: #6366F1;
+    --primary-hover: #4F46E5;
+    --bg-dark: #070B14;
+    --card-dark: #0E1322;
   }
 
   :root.light {
@@ -25,12 +25,12 @@
   }
 
   html.dark body {
-    background-color: #080C14;
+    background-color: #070B14;
     color: #F8FAFC;
   }
 
   html.light body {
-    background-color: #F1F5F9;
+    background-color: #F8FAFC;
     color: #0F172A;
   }
 
@@ -41,15 +41,15 @@
 
 /* Light Mode Overrides for Glassmorphism & Cards */
 html.light .glass-panel {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.9);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
 }
 
 html.light .glass-card {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.04);
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.04);
 }
 
 html.light .glass-card:hover {
@@ -63,7 +63,7 @@ html.light .bg-slate-950\/85,
 html.light .bg-slate-950\/80,
 html.light .bg-slate-950\/70,
 html.light .bg-slate-950\/60 {
-  background-color: rgba(255, 255, 255, 0.95) !important;
+  background-color: rgba(255, 255, 255, 0.96) !important;
 }
 
 html.light .bg-slate-900\/70,
@@ -80,35 +80,42 @@ html.light .bg-slate-950 {
   background-color: #F8FAFC !important;
 }
 
-html.light .text-white {
-  color: #0F172A !important;
+/* Ensure text on colored/gradient buttons remains crisp white in light mode */
+html.light .bg-indigo-600,
+html.light .bg-indigo-500,
+html.light .bg-purple-600,
+html.light .bg-purple-500,
+html.light .bg-violet-600,
+html.light .bg-violet-500,
+html.light .bg-blue-600,
+html.light .bg-blue-500,
+html.light .bg-emerald-600,
+html.light [class*="bg-gradient-to"] {
+  color: #FFFFFF !important;
 }
 
-html.light .text-slate-100 {
-  color: #1E293B !important;
-}
-
-html.light .text-slate-200 {
-  color: #334155 !important;
-}
-
-html.light .text-slate-300 {
-  color: #475569 !important;
-}
-
-html.light .text-slate-400 {
-  color: #64748B !important;
+html.light [class*="bg-gradient-to"] span,
+html.light [class*="bg-gradient-to"] p,
+html.light [class*="bg-gradient-to"] h1,
+html.light [class*="bg-gradient-to"] h2,
+html.light [class*="bg-gradient-to"] h3,
+html.light [class*="bg-gradient-to"] h4,
+html.light [class*="bg-gradient-to"] strong {
+  color: inherit;
 }
 
 html.light .border-slate-800,
 html.light .border-slate-800\/80,
 html.light .border-slate-800\/60,
-html.light .border-slate-800\/50 {
+html.light .border-slate-800\/50,
+html.light .border-slate-700,
+html.light .border-slate-700\/60 {
   border-color: #E2E8F0 !important;
 }
 
-html.light .bg-\[\#080C14\] {
-  background-color: #F1F5F9 !important;
+html.light .bg-\[\#080C14\],
+html.light .bg-\[\#070B14\] {
+  background-color: #F8FAFC !important;
 }
 
 html.light .bg-slate-900 {
@@ -116,7 +123,8 @@ html.light .bg-slate-900 {
 }
 
 html.light .bg-slate-800,
-html.light .bg-slate-800\/60 {
+html.light .bg-slate-800\/60,
+html.light .bg-slate-800\/40 {
   background-color: #F1F5F9 !important;
 }
 
@@ -128,7 +136,7 @@ html.light .bg-slate-800\/60 {
 
 /* Glassmorphism Design Tokens */
 .glass-panel {
-  background: rgba(13, 17, 29, 0.75);
+  background: rgba(14, 19, 34, 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -136,7 +144,7 @@ html.light .bg-slate-800\/60 {
 }
 
 .glass-card {
-  background: rgba(15, 23, 42, 0.65);
+  background: rgba(14, 19, 34, 0.65);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -152,6 +160,10 @@ html.light .bg-slate-800\/60 {
 /* Glow Effects */
 .glow-indigo {
   box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.4);
+}
+
+.glow-purple {
+  box-shadow: 0 0 25px -5px rgba(168, 85, 247, 0.4);
 }
 
 .glow-cyan {
@@ -198,12 +210,6 @@ html.light .bg-slate-800\/60 {
   }
 }
 
-.animate-float-delayed {
-  @media (prefers-reduced-motion: no-preference) {
-    animation: float 5s ease-in-out 1.5s infinite;
-  }
-}
-
 .animate-pulse-glow {
   @media (prefers-reduced-motion: no-preference) {
     animation: pulseGlow 4s ease-in-out infinite;
@@ -228,15 +234,26 @@ html.light .bg-slate-800\/60 {
   width: 6px;
   height: 6px;
 }
-::-webkit-scrollbar-track {
-  background: #080c14;
+html.dark ::-webkit-scrollbar-track {
+  background: #070B14;
 }
-::-webkit-scrollbar-thumb {
-  background: #1e293b;
+html.dark ::-webkit-scrollbar-thumb {
+  background: #1E293B;
   border-radius: 9999px;
 }
-::-webkit-scrollbar-thumb:hover {
+html.dark ::-webkit-scrollbar-thumb:hover {
   background: #334155;
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: #F8FAFC;
+}
+html.light ::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
 }
 
 /* Accessible Data Table Styling */

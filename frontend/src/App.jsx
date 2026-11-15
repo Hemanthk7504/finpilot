@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "./components/Navbar";
+import Sidebar from "./components/Sidebar";
+import Header from "./components/Header";
 import HomePage from "./components/HomePage";
 import AuthModal from "./components/AuthModal";
 import KPIOverview from "./components/KPIOverview";
+import CashFlowTrendCard from "./components/CashFlowTrendCard";
+import ExpenseBreakdownCard from "./components/ExpenseBreakdownCard";
+import AIInsightsCard from "./components/AIInsightsCard";
+import StatementBanner from "./components/StatementBanner";
+import QuickActions from "./components/QuickActions";
+import AddTransactionModal from "./components/AddTransactionModal";
 import StatementUploader from "./components/StatementUploader";
-import SpendingCharts from "./components/SpendingCharts";
-import ForecastView from "./components/ForecastView";
-import HealthScoreCard from "./components/HealthScoreCard";
-import AnomalyAlerts from "./components/AnomalyAlerts";
-import BudgetGoals from "./components/BudgetGoals";
-import InvestmentGuidance from "./components/InvestmentGuidance";
-import TransactionTable from "./components/TransactionTable";
 import AICoPilotDrawer from "./components/AICoPilotDrawer";
 import ReportsModal from "./components/ReportsModal";
 import SalaryModal from "./components/SalaryModal";
-import CurrencySwitcherModal from "./components/CurrencySwitcherModal";
+import BudgetGoals from "./components/BudgetGoals";
+import TransactionTable from "./components/TransactionTable";
+import ForecastView from "./components/ForecastView";
+import HealthScoreCard from "./components/HealthScoreCard";
+import InvestmentGuidance from "./components/InvestmentGuidance";
 import SimulatorsView from "./components/SimulatorsView";
 
 import FIRECalculator from "./components/FIRECalculator";
@@ -42,21 +46,7 @@ import {
   logoutUser,
 } from "./services/api";
 
-import {
-  LayoutDashboard,
-  TrendingUp,
-  ShieldCheck,
-  Target,
-  LineChart,
-  ListOrdered,
-  Bot,
-  AlertTriangle,
-  UploadCloud,
-  ArrowRight,
-  Calendar,
-  Sparkles,
-  DollarSign
-} from "lucide-react";
+import { Calendar, DollarSign, ArrowRight, Sparkles } from "lucide-react";
 
 export default function App() {
   // Main View: 'home' (Landing Page) vs 'dashboard' (Finance Advisor Portal)
@@ -67,14 +57,19 @@ export default function App() {
   // Light / Dark Theme State (persisted & synced to <meta>)
   const [theme, setTheme] = useState(() => localStorage.getItem("finpilot_theme") || "dark");
 
-  // Multi-Currency & Live FX
-  const [currentCurrency, setCurrentCurrency] = useState({ code: "USD", symbol: "$", name: "US Dollar", rate: 1.0 });
-  const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
+  // Multi-Currency & Live FX (INR as standard default)
+  const [currentCurrency, setCurrentCurrency] = useState({
+    code: "INR",
+    symbol: "₹",
+    name: "Indian Rupee",
+    rate: 1.0,
+  });
 
   // Modals & Panels
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState("login");
   const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
+  const [isAddTxnOpen, setIsAddTxnOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -158,7 +153,6 @@ export default function App() {
   };
 
   useEffect(() => {
-    // Check if real user session exists
     getCurrentUser()
       .then((user) => {
         if (user) {
@@ -194,326 +188,266 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen ${theme === "light" ? "bg-[#F1F5F9] text-slate-900" : "bg-[#080C14] text-slate-100"} flex flex-col font-sans selection:bg-indigo-500 selection:text-white transition-colors duration-200`}>
-      {/* VIEW 1: SEPARATE HOME / LANDING PAGE */}
+    <div
+      className={`min-h-screen ${
+        theme === "light" ? "bg-[#F8FAFC] text-slate-900" : "bg-[#070B14] text-slate-100"
+      } font-sans selection:bg-indigo-500 selection:text-white transition-colors duration-200`}
+    >
+      {/* VIEW 1: HOME / LANDING PAGE */}
       {currentView === "home" && (
         <HomePage
-          onLaunchApp={() => navigateView("dashboard")}
+          onLaunchApp={() => {
+            if (currentUser) {
+              navigateView("dashboard");
+            } else {
+              openAuthWithMode("login");
+            }
+          }}
           onOpenAuth={openAuthWithMode}
           currentUser={currentUser}
         />
       )}
 
-      {/* VIEW 2: FULL-FEATURED ADVANCED DASHBOARD */}
+      {/* VIEW 2: FULL-FEATURED ADVANCED DASHBOARD WITH SIDEBAR & HEADER */}
       {currentView === "dashboard" && (
-        <>
-          {/* Top Navbar */}
-          <Navbar
-            overview={overview}
-            currentUser={currentUser}
+        <div className="flex h-screen overflow-hidden">
+          {/* Left Sidebar */}
+          <Sidebar
             activeTab={activeDashboardTab}
             onSelectTab={(tabId) => setActiveDashboardTab(tabId)}
-            onNavigateHome={() => navigateView("home")}
             onOpenChat={() => setIsChatOpen(true)}
-            onOpenReport={() => setIsReportOpen(true)}
-            onOpenUpload={() => setIsUploadModalOpen(true)}
-            onOpenSalaryModal={() => setIsSalaryModalOpen(true)}
-            onOpenCurrencyModal={() => setIsCurrencyModalOpen(true)}
-            currentCurrency={currentCurrency}
-            theme={theme}
-            onToggleTheme={toggleTheme}
-            onOpenAuth={() => openAuthWithMode("login")}
+            onOpenSettings={() => setIsSalaryModalOpen(true)}
             onLogout={handleLogout}
+            theme={theme}
           />
 
-          {/* Main Dashboard Workspace (Full Screen Width) */}
-          <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 xl:px-12 py-6 space-y-6">
-            {/* Real-time salary configuration banner if user has not set it yet */}
-            {currentUser && (!currentUser.monthly_income || currentUser.monthly_income <= 0) && (
-              <div className="rounded-2xl border border-indigo-500/40 bg-gradient-to-r from-indigo-950/60 via-slate-900/90 to-cyan-950/60 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 shrink-0">
-                    <DollarSign className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Add Your Monthly Net Salary</h4>
-                    <p className="text-xs text-slate-400">
-                      Enter your take-home monthly salary to calibrate personalized 50/30/20 budgets, savings targets, and health score benchmarks.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsSalaryModalOpen(true)}
-                  className="shrink-0 flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-5 py-2.5 shadow-md shadow-indigo-600/30 transition hover:scale-105 active:scale-95"
-                >
-                  <span>Add Salary Details</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            )}
+          {/* Main Scrollable Layout */}
+          <div className="flex-1 flex flex-col pl-64 h-full overflow-y-auto">
+            {/* Top Header Bar */}
+            <Header
+              currentUser={currentUser}
+              theme={theme}
+              onToggleTheme={toggleTheme}
+              onOpenUpload={() => setIsUploadModalOpen(true)}
+              onOpenSalaryModal={() => setIsSalaryModalOpen(true)}
+              onOpenReport={() => setIsReportOpen(true)}
+              onLogout={handleLogout}
+              anomaliesCount={anomalies.length}
+            />
 
-            {/* Global KPIs (always visible for financial clarity) */}
-            <KPIOverview overview={overview} anomaliesCount={anomalies.length} />
-
-            {/* Real-time statement import onboarding when account has no statements yet */}
-            {transactions.length === 0 && (
-              <div className="rounded-3xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/40 via-slate-900/90 to-cyan-950/40 p-6 sm:p-8 backdrop-blur-xl">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                  <div className="space-y-2">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 text-xs font-semibold text-indigo-400">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      <span>Real-Time Statement Ingestion</span>
+            {/* Main Content Workspace */}
+            <main className="flex-1 p-6 lg:p-8 space-y-6">
+              {/* Optional Prompt to Set Monthly Salary if not yet configured */}
+              {currentUser && (!currentUser.monthly_income || currentUser.monthly_income <= 0) && (
+                <div className="rounded-2xl border border-indigo-500/40 bg-gradient-to-r from-indigo-950/60 via-slate-900/90 to-purple-950/60 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 shrink-0">
+                      <span className="text-xl font-black">₹</span>
                     </div>
-                    <h2 className="text-xl sm:text-2xl font-bold text-white">
-                      Welcome to your FinPilot Workspace{currentUser?.name ? `, ${currentUser.name}` : ""}!
-                    </h2>
-                    <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-                      Import your real bank statement (CSV or PDF extract) to start real-time ML categorization, 30-day cash flow forecasting, and 5-pillar financial health scoring.
-                    </p>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Add Your Monthly Net Salary (INR)</h4>
+                      <p className="text-xs text-slate-300">
+                        Calibrate personalized 50/30/20 budgets, savings targets, and health score benchmarks in Indian Rupees.
+                      </p>
+                    </div>
                   </div>
                   <button
-                    onClick={() => setIsUploadModalOpen(true)}
-                    className="shrink-0 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold text-xs sm:text-sm px-6 py-3.5 shadow-xl shadow-indigo-600/30 transition hover:scale-105 active:scale-95"
+                    onClick={() => setIsSalaryModalOpen(true)}
+                    className="shrink-0 flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-5 py-2.5 shadow-md shadow-indigo-600/30 transition hover:scale-105 active:scale-95"
                   >
-                    <UploadCloud className="h-4 w-4" />
-                    <span>Import Bank Statement</span>
+                    <span>Add Salary Details</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
                   </button>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* TAB 1: OVERVIEW DASHBOARD (Executive Bento Grid + Advanced Simulators Preview) */}
-            {activeDashboardTab === "dashboard" && (
-              <div className="space-y-6">
-                {/* Emergency Runway Card & Affordability Quick Simulator */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                  <EmergencyRunwayCard overview={overview} />
-                  <AffordabilitySimulator overview={overview} currentUser={currentUser} />
-                </div>
-
-                {/* Bento Grid: 2 Columns on desktop */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                  {/* Left Column (8 / 12): Spending Charts & Recent Transactions */}
-                  <div className="lg:col-span-8 space-y-6">
-                    <SpendingCharts categoryData={categoryData} />
-
-                    {/* Quick Ledger Snapshot */}
-                    <div className="rounded-2xl border border-slate-800/80 bg-slate-900/70 p-5 backdrop-blur-xl">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h3 className="text-base font-bold text-white flex items-center gap-2">
-                            <ListOrdered className="h-4 w-4 text-indigo-400" />
-                            <span>Recent Ledger Activity</span>
-                          </h3>
-                          <p className="text-xs text-slate-400">
-                            Latest classified income and expense transactions.
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => setActiveDashboardTab("ledger")}
-                          className="flex items-center gap-1 text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition"
-                        >
-                          <span>Full Ledger</span>
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-
-                      <TransactionTable transactions={transactions.slice(0, 8)} />
+              {/* TAB 1: DASHBOARD (Matches Reference Screenshot) */}
+              {activeDashboardTab === "dashboard" && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  {/* Greeting & Date Range Bar */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h1 className="text-xl sm:text-2xl font-extrabold text-white dark:text-white light:text-slate-900 tracking-tight flex items-center gap-2">
+                        <span>👋 Welcome back, {currentUser?.name || currentUser?.full_name || "abdulla"}!</span>
+                      </h1>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Here's your financial snapshot for the last 30 days.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-xl bg-slate-900/80 border border-slate-800 px-3.5 py-2 text-xs font-medium text-slate-300 shadow-sm self-start sm:self-auto">
+                      <Calendar className="h-4 w-4 text-purple-400" />
+                      <span>Oct 16, 2026 – Nov 15, 2026</span>
                     </div>
                   </div>
 
-                  {/* Right Column (4 / 12): Anomaly Guard, Upcoming Bills, Quick Actions */}
-                  <div className="lg:col-span-4 space-y-6">
-                    {/* Anomaly & Fraud Radar */}
-                    <AnomalyAlerts anomalies={anomalies} />
+                  {/* 4 KPI Cards (Total Liquid Balance, 30-Day Net Cash Flow, Monthly Savings Rate, Health Score) */}
+                  <KPIOverview overview={overview} />
 
-                    {/* Upcoming Recurring Bills & Subscriptions */}
-                    {forecastData?.detected_recurring && forecastData.detected_recurring.length > 0 && (
-                      <div className="rounded-2xl border border-slate-800/80 bg-slate-900/70 p-5 backdrop-blur-xl space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                            <Calendar className="h-4 w-4 text-purple-400" />
-                            <span>Upcoming Subscriptions</span>
-                          </h3>
-                          <span className="text-[11px] font-mono text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-full">
-                            {forecastData.detected_recurring.length} Detected
-                          </span>
-                        </div>
+                  {/* Middle Row (3 Cards: Cash Flow Trend, Expense Breakdown, AI Insights) */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+                    {/* Area Chart: 6 of 12 columns */}
+                    <div className="lg:col-span-6 flex flex-col">
+                      <CashFlowTrendCard overview={overview} transactions={transactions} />
+                    </div>
 
-                        <div className="space-y-2">
-                          {forecastData.detected_recurring.slice(0, 4).map((sub, idx) => (
-                            <div
-                              key={idx}
-                              className="rounded-xl border border-slate-800 bg-slate-950/60 p-2.5 flex items-center justify-between text-xs"
-                            >
-                              <div>
-                                <p className="font-bold text-white truncate max-w-[140px]">
-                                  {sub.merchant}
-                                </p>
-                                <span className="text-[10px] text-slate-400">
-                                  Every {sub.frequency_days} days
-                                </span>
-                              </div>
-                              <span className="font-bold font-numeric text-rose-400">
-                                -${sub.estimated_amount?.toFixed(2)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                    {/* Expense Breakdown Donut: 3.5 of 12 columns */}
+                    <div className="lg:col-span-3 flex flex-col">
+                      <ExpenseBreakdownCard categoryData={categoryData} />
+                    </div>
 
-                        <button
-                          onClick={() => setActiveDashboardTab("forecast")}
-                          className="w-full text-center text-xs font-semibold text-purple-400 hover:text-purple-300 py-1 transition flex items-center justify-center gap-1"
-                        >
-                          <span>View 30-Day Cash Forecast</span>
-                          <ArrowRight className="h-3 w-3" />
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Quick Import Statement Callout */}
-                    <div className="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-950/40 via-slate-900/80 to-slate-900/80 p-5 space-y-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600/30 text-indigo-400 border border-indigo-500/30">
-                          <UploadCloud className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h4 className="text-xs font-bold text-white">Import Statement</h4>
-                          <p className="text-[11px] text-slate-400">Add new CSV or PDF bank statement</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setIsUploadModalOpen(true)}
-                        className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-2.5 shadow-md shadow-indigo-600/25 transition flex items-center justify-center gap-1.5"
-                      >
-                        <UploadCloud className="h-3.5 w-3.5" />
-                        <span>Upload Statement</span>
-                      </button>
+                    {/* AI Insights Card: 2.5 of 12 columns */}
+                    <div className="lg:col-span-3 flex flex-col">
+                      <AIInsightsCard overview={overview} onOpenChat={() => setIsChatOpen(true)} />
                     </div>
                   </div>
+
+                  {/* Bank Statement Banner */}
+                  <StatementBanner onOpenUpload={() => setIsUploadModalOpen(true)} />
+
+                  {/* Quick Actions Row */}
+                  <QuickActions
+                    onAddTransaction={() => setIsAddTxnOpen(true)}
+                    onSetBudget={() => setActiveDashboardTab("budgets-goals")}
+                    onCreateGoal={() => setActiveDashboardTab("budgets-goals")}
+                    onBillReminder={() => setActiveDashboardTab("forecast")}
+                    onRunSimulator={() => setActiveDashboardTab("simulators")}
+                    onOpenAICoPilot={() => setIsChatOpen(true)}
+                    theme={theme}
+                  />
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* TAB 2: PREDICTIVE FORECAST & SUBSCRIPTIONS */}
-            {activeDashboardTab === "forecast" && (
-              <div className="space-y-6">
-                <ForecastView forecastData={forecastData} />
-                <SubscriptionAudit forecastData={forecastData} />
-                <AnomalyAlerts anomalies={anomalies} />
-              </div>
-            )}
+              {/* TAB 2: TRANSACTIONS (Full Ledger) */}
+              {activeDashboardTab === "ledger" && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  <TransactionTable
+                    transactions={transactions}
+                    onAddTransaction={() => setIsAddTxnOpen(true)}
+                  />
+                </div>
+              )}
 
-            {/* TAB 3: FINANCIAL HEALTH SCORE & MILESTONES */}
-            {activeDashboardTab === "health-score" && (
-              <div className="space-y-6">
-                <HealthScoreCard healthScoreData={healthScoreData} />
-                <FinancialMilestones />
-              </div>
-            )}
+              {/* TAB 3: BUDGETS & GOALS */}
+              {activeDashboardTab === "budgets-goals" && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  <BudgetGoals
+                    budgets={budgets}
+                    goals={goals}
+                    onRefreshData={loadAllData}
+                  />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <BudgetRuleBuilder currentUser={currentUser} />
+                    <BudgetRebalancer categoryData={categoryData} />
+                  </div>
+                </div>
+              )}
 
-            {/* TAB 4: BUDGETS, GOALS & REBALANCING */}
-            {activeDashboardTab === "budgets-goals" && (
-              <div className="space-y-6">
-                <BudgetGoals budgets={budgets} goals={goals} onRefresh={() => loadAllData()} />
-                <BudgetRebalancer overview={overview} currentUser={currentUser} />
-                <BudgetRuleBuilder budgets={budgets} />
-              </div>
-            )}
+              {/* TAB 4: FORECAST & BILLS */}
+              {activeDashboardTab === "forecast" && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  <ForecastView forecastData={forecastData} />
+                  <SubscriptionAudit recurringBills={forecastData?.detected_recurring || []} />
+                </div>
+              )}
 
-            {/* TAB 5: INVESTMENT GUIDANCE, FIRE & DEBT PAYOFF */}
-            {activeDashboardTab === "investments" && (
-              <div className="space-y-6">
-                <FIRECalculator overview={overview} currentUser={currentUser} />
-                <DebtPayoffPlanner />
-                <InvestmentGuidance />
-                <TaxEstimator overview={overview} currentUser={currentUser} />
-                <NetWorthTracker overview={overview} />
-              </div>
-            )}
+              {/* TAB 5: HEALTH SCORE */}
+              {activeDashboardTab === "health-score" && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  <HealthScoreCard healthScoreData={healthScoreData} />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <EmergencyRunwayCard overview={overview} />
+                    <FinancialMilestones overview={overview} />
+                  </div>
+                </div>
+              )}
 
-            {/* TAB 6: DEDICATED ADVANCED SIMULATORS & TOOLS SUITE */}
-            {activeDashboardTab === "simulators" && (
-              <SimulatorsView
-                overview={overview}
-                currentUser={currentUser}
-                forecastData={forecastData}
-                budgets={budgets}
-              />
-            )}
+              {/* TAB 6: INVESTMENTS */}
+              {activeDashboardTab === "investments" && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  <InvestmentGuidance overview={overview} />
+                  <TaxEstimator currentUser={currentUser} />
+                </div>
+              )}
 
-            {/* TAB 7: TRANSACTION LEDGER */}
-            {activeDashboardTab === "ledger" && (
-              <div className="space-y-6">
-                <TransactionTable transactions={transactions} />
-              </div>
-            )}
-          </main>
-
-          {/* Floating AI Co-Pilot Trigger Button */}
-          <div className="fixed bottom-6 right-6 z-40">
-            <button
-              onClick={() => setIsChatOpen(true)}
-              className="flex items-center gap-2 rounded-full bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 px-4 py-3 text-xs sm:text-sm font-bold text-white shadow-xl shadow-indigo-600/30 hover:scale-105 active:scale-95 transition"
-            >
-              <Bot className="h-5 w-5" />
-              <span>Ask FinPilot AI</span>
-            </button>
+              {/* TAB 7: SIMULATORS & TOOLS */}
+              {activeDashboardTab === "simulators" && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  <SimulatorsView overview={overview} currentUser={currentUser} />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <FIRECalculator overview={overview} currentUser={currentUser} />
+                    <AffordabilitySimulator overview={overview} currentUser={currentUser} />
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <DebtPayoffPlanner />
+                    <NetWorthTracker overview={overview} />
+                  </div>
+                </div>
+              )}
+            </main>
           </div>
-
-          {/* Footer */}
-          <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
-            <p>FinPilot MAX • AI-Powered Intelligent Personal Finance Advisor • Built with FastAPI, Scikit-Learn &amp; React</p>
-          </footer>
-        </>
+        </div>
       )}
 
-      {/* Shared Modals & Drawers */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        initialMode={authInitialMode}
-        onClose={() => setIsAuthModalOpen(false)}
-        onAuthSuccess={handleAuthSuccess}
-      />
-
-      <SalaryModal
-        isOpen={isSalaryModalOpen}
-        currentUser={currentUser}
-        onClose={() => setIsSalaryModalOpen(false)}
-        onSalaryUpdated={(updated) => {
-          setCurrentUser(updated);
-          loadAllData();
-        }}
-      />
-
-      <CurrencySwitcherModal
-        isOpen={isCurrencyModalOpen}
-        onClose={() => setIsCurrencyModalOpen(false)}
-        currentCurrency={currentCurrency}
-        onSelectCurrency={(curr) => setCurrentCurrency(curr)}
-      />
+      {/* Global Modals & Drawers */}
+      {isAddTxnOpen && (
+        <AddTransactionModal
+          isOpen={isAddTxnOpen}
+          onClose={() => setIsAddTxnOpen(false)}
+          onSuccess={loadAllData}
+        />
+      )}
 
       {isUploadModalOpen && (
-        <StatementUploader
-          isModal={true}
-          onClose={() => setIsUploadModalOpen(false)}
-          onUploadSuccess={() => {
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-150">
+          <StatementUploader
+            isModal={true}
+            onClose={() => setIsUploadModalOpen(false)}
+            onUploadSuccess={() => {
+              loadAllData();
+              setTimeout(() => setIsUploadModalOpen(false), 1200);
+            }}
+          />
+        </div>
+      )}
+
+      {isSalaryModalOpen && (
+        <SalaryModal
+          isOpen={isSalaryModalOpen}
+          onClose={() => setIsSalaryModalOpen(false)}
+          currentUser={currentUser}
+          onSalaryUpdated={(updated) => {
+            setCurrentUser(updated);
             loadAllData();
-            setIsUploadModalOpen(false);
           }}
         />
       )}
 
-      <AICoPilotDrawer
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        overview={overview}
-      />
+      {isReportOpen && (
+        <ReportsModal
+          isOpen={isReportOpen}
+          onClose={() => setIsReportOpen(false)}
+          overview={overview}
+        />
+      )}
 
-      <ReportsModal
-        isOpen={isReportOpen}
-        onClose={() => setIsReportOpen(false)}
-      />
+      {isChatOpen && (
+        <AICoPilotDrawer
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          overview={overview}
+          currentUser={currentUser}
+          theme={theme}
+        />
+      )}
+
+      {isAuthModalOpen && (
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          initialMode={authInitialMode}
+          onSuccess={handleAuthSuccess}
+        />
+      )}
     </div>
   );
 }

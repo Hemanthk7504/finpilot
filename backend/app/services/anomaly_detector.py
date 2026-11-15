@@ -4,6 +4,30 @@ from typing import List, Dict, Any, Tuple
 from datetime import timedelta
 from sklearn.ensemble import IsolationForest
 
+def format_inr_str(amount: float) -> str:
+    try:
+        is_neg = amount < 0
+        abs_val = abs(amount)
+        parts = f"{abs_val:.2f}".split(".")
+        int_part = parts[0]
+        dec_part = f".{parts[1]}"
+        if len(int_part) <= 3:
+            res = int_part
+        else:
+            last3 = int_part[-3:]
+            remaining = int_part[:-3]
+            groups = []
+            while len(remaining) > 2:
+                groups.insert(0, remaining[-2:])
+                remaining = remaining[:-2]
+            if remaining:
+                groups.insert(0, remaining)
+            res = ",".join(groups) + "," + last3
+        prefix = "-₹" if is_neg else "₹"
+        return f"{prefix}{res}{dec_part}"
+    except Exception:
+        return f"₹{amount:,.2f}"
+
 class AnomalyDetector:
     """Multi-tiered financial anomaly and fraud/suspicious activity detector."""
 
@@ -44,7 +68,10 @@ class AnomalyDetector:
 
                 if not duplicates.empty:
                     df.at[i, "is_anomaly"] = True
-                    df.at[i, "anomaly_reason"] = f"Possible Duplicate: identical charge of ${row['amount']:.2f} for '{row['clean_merchant']}' detected within 48 hours."
+                    df.at[i, "anomaly_reason"] = (
+                        f"Possible Duplicate: identical charge of {format_inr_str(row['amount'])} for "
+                        f"'{row['clean_merchant']}' detected within 48 hours."
+                    )
 
         # 2. Category-Specific Outlier Spikes (Z-Score & IQR)
         # Only evaluate categories with enough transaction history
@@ -61,14 +88,14 @@ class AnomalyDetector:
                     if df.at[idx, "is_anomaly"]:
                         continue
 
-                    # High threshold: Z-score > 2.8 and at least 2.5x median
+                    # High threshold: Z-score > 2.6 and at least 2.5x median
                     if std_amt > 0:
                         z_score = (amt - mean_amt) / std_amt
-                        if z_score >= 2.6 and amt >= (median_amt * 2.5) and amt > 100.0:
+                        if z_score >= 2.6 and amt >= (median_amt * 2.5) and amt > 500.0:
                             df.at[idx, "is_anomaly"] = True
                             df.at[idx, "anomaly_reason"] = (
-                                f"Unusual High Spend: ${amt:.2f} is {amt/mean_amt:.1f}x higher than your average "
-                                f"${mean_amt:.2f} for {cat}."
+                                f"Unusual High Spend: {format_inr_str(amt)} is {amt/mean_amt:.1f}x higher than your average "
+                                f"{format_inr_str(mean_amt)} for {cat}."
                             )
 
         # 3. Isolation Forest for Global Multivariate Outliers
@@ -87,10 +114,10 @@ class AnomalyDetector:
                 for i, (idx, _) in enumerate(debits.iterrows()):
                     if preds[i] == -1 and not df.at[idx, "is_anomaly"]:
                         amt = df.at[idx, "amount"]
-                        if amt > 250.0: # Filter out trivial micro amounts
+                        if amt > 2000.0: # Filter out trivial micro amounts
                             df.at[idx, "is_anomaly"] = True
                             df.at[idx, "anomaly_reason"] = (
-                                f"Statistical Outlier: Model detected anomalous spend pattern (${amt:.2f} at {df.at[idx, 'clean_merchant']})."
+                                f"Statistical Outlier: Model detected anomalous spend pattern ({format_inr_str(amt)} at {df.at[idx, 'clean_merchant']})."
                             )
             except Exception:
                 pass

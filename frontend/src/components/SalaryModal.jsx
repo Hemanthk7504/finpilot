@@ -1,14 +1,15 @@
 import React, { useState } from "react";
-import { X, DollarSign, Sparkles, Check, ArrowRight, Loader2, PieChart, ShieldCheck } from "lucide-react";
+import { X, Sparkles, Check, ArrowRight, Loader2, PieChart, ShieldCheck } from "lucide-react";
 import { updateUserSalary } from "../services/api";
+import { formatINR } from "../utils/currency";
 
 export default function SalaryModal({ isOpen, onClose, currentUser, onSalaryUpdated }) {
   const [salary, setSalary] = useState(
     currentUser?.monthly_income && currentUser.monthly_income > 0
       ? currentUser.monthly_income
-      : 6500
+      : 75000
   );
-  const [currency, setCurrency] = useState(currentUser?.currency || "$");
+  const [currency, setCurrency] = useState("₹");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -19,7 +20,7 @@ export default function SalaryModal({ isOpen, onClose, currentUser, onSalaryUpda
   const wants30 = Math.round(numSalary * 0.3);
   const savings20 = Math.round(numSalary * 0.2);
 
-  const presets = [3000, 5000, 6500, 8500, 10000, 15000];
+  const presets = [35000, 50000, 75000, 100000, 150000, 250000];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,7 +32,7 @@ export default function SalaryModal({ isOpen, onClose, currentUser, onSalaryUpda
     setErrorMsg("");
 
     try {
-      const updatedUser = await updateUserSalary(numSalary, currency);
+      const updatedUser = await updateUserSalary(numSalary, "₹");
       if (onSalaryUpdated) onSalaryUpdated(updatedUser);
       onClose();
     } catch (err) {
@@ -55,14 +56,14 @@ export default function SalaryModal({ isOpen, onClose, currentUser, onSalaryUpda
 
         {/* Header */}
         <div className="text-center space-y-1.5">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 shadow-lg shadow-indigo-500/25 mb-1">
-            <DollarSign className="h-6 w-6 text-white" />
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-400 shadow-lg shadow-indigo-500/25 mb-1">
+            <span className="text-2xl font-black text-white">₹</span>
           </div>
           <h3 className="text-xl font-bold tracking-tight text-white">
-            Set Up Your Monthly Net Salary
+            Set Up Your Monthly Take-Home Salary
           </h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-            Your monthly take-home income calibrates your personalized 50/30/20 budget envelope, savings rate benchmarks, and cash flow projections.
+            Your monthly net income calibrates your personalized 50/30/20 budget envelopes, savings rate benchmarks, and cash flow projections in Indian Rupees (₹).
           </p>
         </div>
 
@@ -76,20 +77,20 @@ export default function SalaryModal({ isOpen, onClose, currentUser, onSalaryUpda
           {/* Main Salary Input */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-2">
-              Monthly Net Take-Home Income
+              Monthly Net Take-Home Salary (₹)
             </label>
             <div className="relative flex items-center">
               <span className="absolute left-4 text-xl font-bold font-numeric text-indigo-400">
-                {currency}
+                ₹
               </span>
               <input
                 type="number"
-                min="100"
-                step="50"
+                min="1000"
+                step="500"
                 required
                 value={salary}
                 onChange={(e) => setSalary(e.target.value)}
-                placeholder="6500"
+                placeholder="75000"
                 className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 pl-11 pr-20 py-3.5 text-xl font-extrabold font-numeric text-white placeholder-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               />
               <span className="absolute right-4 text-xs font-medium text-slate-400">
@@ -115,7 +116,7 @@ export default function SalaryModal({ isOpen, onClose, currentUser, onSalaryUpda
                       : "border border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-700 hover:bg-slate-800"
                   }`}
                 >
-                  ${preset.toLocaleString()}
+                  {formatINR(preset, { decimals: 0 })}
                 </button>
               ))}
             </div>
@@ -135,21 +136,21 @@ export default function SalaryModal({ isOpen, onClose, currentUser, onSalaryUpda
               <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-2.5">
                 <span className="text-[10px] text-blue-300 font-bold uppercase block">50% Needs</span>
                 <span className="text-sm font-extrabold font-numeric text-white mt-0.5 block">
-                  ${needs50.toLocaleString()}
+                  {formatINR(needs50, { decimals: 0 })}
                 </span>
                 <span className="text-[10px] text-slate-400 block mt-0.5">Rent, Bills, Food</span>
               </div>
               <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-2.5">
                 <span className="text-[10px] text-purple-300 font-bold uppercase block">30% Wants</span>
                 <span className="text-sm font-extrabold font-numeric text-white mt-0.5 block">
-                  ${wants30.toLocaleString()}
+                  {formatINR(wants30, { decimals: 0 })}
                 </span>
                 <span className="text-[10px] text-slate-400 block mt-0.5">Dining, Leisure</span>
               </div>
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-2.5">
                 <span className="text-[10px] text-emerald-300 font-bold uppercase block">20% Savings</span>
                 <span className="text-sm font-extrabold font-numeric text-emerald-400 mt-0.5 block">
-                  ${savings20.toLocaleString()}
+                  {formatINR(savings20, { decimals: 0 })}
                 </span>
                 <span className="text-[10px] text-slate-400 block mt-0.5">SIP & Cushion</span>
               </div>
@@ -160,7 +161,7 @@ export default function SalaryModal({ isOpen, onClose, currentUser, onSalaryUpda
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 py-3.5 text-xs font-bold text-white shadow-xl shadow-indigo-600/30 transition hover:scale-[1.01] active:scale-98 disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 py-3.5 text-xs font-bold text-white shadow-xl shadow-indigo-600/30 transition hover:scale-[1.01] active:scale-98 disabled:opacity-50"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />

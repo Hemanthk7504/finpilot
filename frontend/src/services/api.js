@@ -214,6 +214,28 @@ export async function fetchTransactions(params = {}) {
   return res.json();
 }
 
+export async function createTransaction(txnData) {
+  const res = await fetch(`${API_BASE}/transactions`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(txnData),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to create transaction");
+  }
+  return res.json();
+}
+
+export async function deleteTransaction(txnId) {
+  const res = await fetch(`${API_BASE}/transactions/${txnId}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to delete transaction");
+  return res.json();
+}
+
 export async function uploadBankStatement(file) {
   const formData = new FormData();
   formData.append("file", file);

@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { ShoppingBag, ArrowRight, CheckCircle2, AlertTriangle, XCircle, DollarSign, Sparkles } from "lucide-react";
+import { ShoppingBag, ArrowRight, CheckCircle2, AlertTriangle, XCircle, Sparkles } from "lucide-react";
 import { checkAffordability } from "../services/api";
+import { formatINR } from "../utils/currency";
 
 export default function AffordabilitySimulator({ overview, currentUser }) {
-  const [itemName, setItemName] = useState("Apple MacBook Pro M4");
-  const [itemPrice, setItemPrice] = useState(1599);
+  const [itemName, setItemName] = useState("Apple MacBook Air / iPhone");
+  const [itemPrice, setItemPrice] = useState(65000);
   const [paymentType, setPaymentType] = useState("cash"); // "cash" | "emi"
   const [emiMonths, setEmiMonths] = useState(12);
 
@@ -78,11 +79,11 @@ export default function AffordabilitySimulator({ overview, currentUser }) {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-300">Purchase Price ($)</label>
+          <label className="text-xs font-semibold text-slate-300">Purchase Price (₹)</label>
           <input
             type="number"
-            min="10"
-            max="100000"
+            min="100"
+            max="10000000"
             value={itemPrice}
             onChange={(e) => setItemPrice(Number(e.target.value))}
             className="w-full rounded-xl border border-slate-800 bg-slate-950/80 px-3.5 py-2.5 text-xs text-white font-numeric focus:border-indigo-500 focus:outline-none"
@@ -133,7 +134,7 @@ export default function AffordabilitySimulator({ overview, currentUser }) {
               <h4 className="text-sm font-bold text-white">{result.verdict}</h4>
             </div>
             <span className="text-xs font-numeric font-bold text-slate-300">
-              Commitment: ${result.monthly_commitment.toLocaleString()}
+              Commitment: {formatINR(result.monthly_commitment, { decimals: 0 })}
             </span>
           </div>
 
@@ -148,7 +149,7 @@ export default function AffordabilitySimulator({ overview, currentUser }) {
             </div>
             <div className="text-right">
               <span className="text-slate-400">Post-Purchase Reserve:</span>
-              <strong className="ml-1.5 text-emerald-400 font-numeric">${result.remaining_liquid_cash.toLocaleString()}</strong>
+              <strong className="ml-1.5 text-emerald-400 font-numeric">{formatINR(result.remaining_liquid_cash, { decimals: 0 })}</strong>
             </div>
           </div>
         </div>

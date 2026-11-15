@@ -1,30 +1,40 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Bot, Send, X, Sparkles, User, ArrowRight, Loader2, DollarSign } from "lucide-react";
+import { Bot, Send, X, Sparkles, User, Loader2, ArrowRight, CornerDownLeft } from "lucide-react";
 import { sendChatMessage } from "../services/api";
+import { formatINR } from "../utils/currency";
 
-export default function AICoPilotDrawer({ isOpen, onClose, overview }) {
+export default function AICoPilotDrawer({ isOpen, onClose, overview, currentUser, theme }) {
+  const userName = currentUser?.name || "Friend";
+
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content:
-        "Hello Alex! I am **FinPilot MAX**, your AI financial co-pilot.\n\nI have real-time visibility into your bank statements, spending patterns, budgets, and Financial Health Score. Ask me anything about your finances!",
+      content: `Hello ${userName}! I am **FinPilot MAX**, your conversational AI financial advisor.\n\nI have real-time visibility into your balance, cash flows, ML-categorized transactions, and Financial Health Score.\n\nFeel free to ask me anything in natural language — from *"Can I afford a ₹60,000 purchase?"* to *"Should I choose the Old or New Tax Regime?"* or *"Calculate my SIP returns"*!`,
     },
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const starterChips = [
-    "Can I afford a $1,200 vacation next month?",
-    "Where did most of my money go this month?",
-    "How can I boost my Health Score to 90?",
-    "Are there any duplicate or suspicious charges?",
-    "How should I invest $500/month?",
+    "Can I afford a ₹50,000 purchase?",
+    "Compare Old vs New Tax Regime",
+    "Calculate SIP for ₹10,000/month",
+    "How does Section 80C save tax?",
+    "Where did my money go this month?",
+    "How to reach a 95+ Health Score?",
   ];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => textareaRef.current?.focus(), 150);
+    }
+  }, [isOpen]);
 
   const handleSend = async (textToSend) => {
     const text = textToSend || inputMessage;
@@ -58,46 +68,73 @@ export default function AICoPilotDrawer({ isOpen, onClose, overview }) {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   if (!isOpen) return null;
 
+  const balance = overview?.current_balance ?? 5420.0;
+  const savingsRate = overview?.savings_rate ?? 100.0;
+  const healthScore = Math.round(overview?.health_score ?? 81);
+
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/70 backdrop-blur-sm flex justify-end">
-      <div className="relative w-full max-w-lg bg-slate-900 border-l border-slate-800 h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-200">
-        {/* Drawer Header */}
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/70 backdrop-blur-sm flex justify-end animate-in fade-in duration-150">
+      <div
+        className={`relative w-full max-w-lg h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-200 border-l ${
+          theme === "light"
+            ? "bg-white border-slate-200 text-slate-900"
+            : "bg-[#090D18] border-slate-800 text-slate-100"
+        }`}
+      >
+        {/* Header */}
+        <div
+          className={`p-4 border-b flex items-center justify-between transition-colors ${
+            theme === "light" ? "border-slate-200 bg-slate-50/80" : "border-slate-800 bg-slate-900/80"
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 shadow-md">
-              <Bot className="h-5 w-5 text-white" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 shadow-lg shadow-purple-600/30 text-white">
+              <Bot className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-sm text-white">FinPilot AI Advisor</h3>
-                <span className="rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold px-1.5 py-0.2 uppercase">
-                  Live
+                <h3 className="font-bold text-sm tracking-tight">FinPilot AI Advisor</h3>
+                <span className="rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[10px] font-bold px-2 py-0.2 uppercase">
+                  GPT-Ready
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">Context-Aware Financial Co-Pilot</p>
+              <p className="text-[11px] text-slate-400">Open-Ended Conversational Wealth Intelligence</p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Live Context Banner */}
-        <div className="px-4 py-2.5 bg-slate-800/40 border-b border-slate-800 flex items-center justify-between text-[11px] text-slate-300">
+        {/* Live Metrics Context Strip */}
+        <div
+          className={`px-4 py-2.5 border-b flex items-center justify-between text-xs ${
+            theme === "light"
+              ? "bg-slate-100/70 border-slate-200 text-slate-700"
+              : "bg-slate-900/50 border-slate-800 text-slate-300"
+          }`}
+        >
           <span>
-            Balance: <strong className="text-white">${overview?.current_balance?.toLocaleString()}</strong>
+            Balance: <strong className="font-numeric text-indigo-500">{formatINR(balance)}</strong>
           </span>
           <span>
-            Savings: <strong className="text-emerald-400">{overview?.savings_rate?.toFixed(1)}%</strong>
+            Savings: <strong className="font-numeric text-emerald-500">{savingsRate.toFixed(1)}%</strong>
           </span>
           <span>
-            Health Score: <strong className="text-purple-400">{overview?.health_score}/100</strong>
+            Score: <strong className="font-numeric text-purple-500">{healthScore}/100</strong>
           </span>
         </div>
 
@@ -109,30 +146,39 @@ export default function AICoPilotDrawer({ isOpen, onClose, overview }) {
               className={`flex gap-3 ${m.role === "user" ? "justify-end" : "justify-start"}`}
             >
               {m.role === "assistant" && (
-                <div className="h-7 w-7 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0 text-white mt-0.5">
+                <div className="h-7 w-7 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center shrink-0 text-white mt-0.5 shadow-md">
                   <Bot className="h-4 w-4" />
                 </div>
               )}
 
               <div
-                className={`max-w-[85%] rounded-2xl p-3.5 leading-relaxed ${
+                className={`max-w-[85%] rounded-2xl p-4 leading-relaxed shadow-sm ${
                   m.role === "user"
-                    ? "bg-indigo-600 text-white rounded-br-none"
-                    : "bg-slate-800/90 text-slate-200 border border-slate-700/60 rounded-tl-none whitespace-pre-wrap"
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-br-none"
+                    : theme === "light"
+                    ? "bg-slate-100/90 text-slate-800 border border-slate-200 rounded-tl-none whitespace-pre-wrap"
+                    : "bg-slate-900/90 text-slate-200 border border-slate-800 rounded-tl-none whitespace-pre-wrap"
                 }`}
               >
-                {m.content}
+                <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed space-y-2">
+                  {m.content}
+                </div>
 
-                {/* Suggested Action Chips inside assistant message */}
+                {/* Suggested Action Chips */}
                 {m.suggested_actions && m.suggested_actions.length > 0 && (
-                  <div className="mt-3 pt-2.5 border-t border-slate-700/60 flex flex-wrap gap-1.5">
+                  <div className="mt-3 pt-2.5 border-t border-slate-700/40 flex flex-wrap gap-1.5">
                     {m.suggested_actions.map((act, i) => (
                       <button
                         key={i}
                         onClick={() => handleSend(act)}
-                        className="rounded-lg bg-slate-700/60 hover:bg-slate-700 px-2 py-1 text-[10px] font-medium text-indigo-300 transition"
+                        className={`rounded-lg px-2.5 py-1 text-[11px] font-medium transition flex items-center gap-1 ${
+                          theme === "light"
+                            ? "bg-white text-indigo-600 hover:bg-indigo-50 border border-indigo-200"
+                            : "bg-slate-800 text-indigo-300 hover:bg-slate-700 border border-slate-700"
+                        }`}
                       >
-                        {act} →
+                        <span>{act}</span>
+                        <ArrowRight className="h-3 w-3" />
                       </button>
                     ))}
                   </div>
@@ -148,56 +194,84 @@ export default function AICoPilotDrawer({ isOpen, onClose, overview }) {
           ))}
 
           {isLoading && (
-            <div className="flex gap-3">
-              <div className="h-7 w-7 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0 text-white">
+            <div className="flex gap-3 items-center">
+              <div className="h-7 w-7 rounded-lg bg-purple-600 flex items-center justify-center shrink-0 text-white">
                 <Bot className="h-4 w-4" />
               </div>
-              <div className="rounded-2xl rounded-tl-none bg-slate-800/90 p-3 text-slate-300 border border-slate-700/60 flex items-center gap-2">
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-400" />
-                <span>FinPilot is analyzing cash flow metrics...</span>
+              <div
+                className={`rounded-2xl rounded-tl-none p-3 border flex items-center gap-2 ${
+                  theme === "light"
+                    ? "bg-slate-100 border-slate-200 text-slate-700"
+                    : "bg-slate-900 border-slate-800 text-slate-300"
+                }`}
+              >
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-400" />
+                <span>FinPilot is reasoning across your finances...</span>
               </div>
             </div>
           )}
+
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Quick Starter Chips */}
-        <div className="px-4 py-2 border-t border-slate-800/80 bg-slate-900 overflow-x-auto flex gap-1.5 no-scrollbar">
-          {starterChips.map((chip, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleSend(chip)}
-              className="rounded-full border border-slate-700 bg-slate-800/80 px-2.5 py-1 text-[11px] font-medium text-slate-300 whitespace-nowrap hover:border-indigo-500 hover:text-white transition"
-            >
-              {chip}
-            </button>
-          ))}
-        </div>
+        {/* Suggested Starter Chips */}
+        {messages.length <= 2 && (
+          <div
+            className={`p-3 border-t overflow-x-auto whitespace-nowrap scrollbar-none flex gap-2 ${
+              theme === "light" ? "bg-slate-50 border-slate-200" : "bg-slate-900/40 border-slate-800"
+            }`}
+          >
+            {starterChips.map((chip, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleSend(chip)}
+                className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-medium border transition ${
+                  theme === "light"
+                    ? "bg-white border-slate-200 text-slate-700 hover:border-purple-400 hover:text-purple-600"
+                    : "bg-slate-800/80 border-slate-700 text-slate-300 hover:border-purple-500 hover:text-purple-300"
+                }`}
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Input Bar */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSend();
-          }}
-          className="p-4 border-t border-slate-800 bg-slate-900 flex items-center gap-2"
+        <div
+          className={`p-3 border-t ${
+            theme === "light" ? "bg-white border-slate-200" : "bg-slate-900/90 border-slate-800"
+          }`}
         >
-          <input
-            type="text"
-            placeholder="Ask about spending, budgets, affordability..."
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            disabled={isLoading}
-            className="flex-1 rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={!inputMessage.trim() || isLoading}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-40 transition shrink-0"
+          <div
+            className={`relative flex items-center rounded-2xl border transition ${
+              theme === "light"
+                ? "bg-slate-100 border-slate-200 focus-within:border-purple-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-purple-500/20"
+                : "bg-slate-800/80 border-slate-700 focus-within:border-purple-500 focus-within:bg-slate-800 focus-within:ring-2 focus-within:ring-purple-500/20"
+            }`}
           >
-            <Send className="h-4 w-4" />
-          </button>
-        </form>
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask any finance question (e.g. 80C, SIP, budget, afford)..."
+              className="w-full resize-none bg-transparent px-3.5 py-3 text-xs outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 max-h-32"
+            />
+            <button
+              onClick={() => handleSend()}
+              disabled={!inputMessage.trim() || isLoading}
+              className="mr-2 flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md transition hover:scale-105 active:scale-95 disabled:opacity-40 shrink-0"
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-400 px-1">
+            <span>Press Enter to send, Shift+Enter for new line</span>
+            <span>FinPilot MAX Co-Pilot</span>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,29 @@
 from typing import List, Dict, Any
 import numpy as np
 
+def format_inr_score(amount: float) -> str:
+    try:
+        is_neg = amount < 0
+        abs_val = abs(amount)
+        parts = f"{abs_val:.0f}".split(".")
+        int_part = parts[0]
+        if len(int_part) <= 3:
+            res = int_part
+        else:
+            last3 = int_part[-3:]
+            remaining = int_part[:-3]
+            groups = []
+            while len(remaining) > 2:
+                groups.insert(0, remaining[-2:])
+                remaining = remaining[:-2]
+            if remaining:
+                groups.insert(0, remaining)
+            res = ",".join(groups) + "," + last3
+        prefix = "-₹" if is_neg else "₹"
+        return f"{prefix}{res}"
+    except Exception:
+        return f"₹{amount:,.0f}"
+
 class HealthScoringEngine:
     """Computes transparent, multi-pillar Financial Health Score (0-100) and actionable advice."""
 
@@ -145,7 +168,7 @@ class HealthScoringEngine:
                 "weight": 25.0,
                 "status": "Optimal" if s_rate_score >= 80 else ("Fair" if s_rate_score >= 50 else "Needs Attention"),
                 "benchmark": "≥ 20% of net income",
-                "details": f"Current savings rate is {savings_rate*100:.1f}% (${net_savings:,.0f}/mo saved)."
+                "details": f"Current savings rate is {savings_rate*100:.1f}% ({format_inr_score(net_savings)}/mo saved)."
             },
             {
                 "name": "Budget Adherence",
@@ -161,7 +184,7 @@ class HealthScoringEngine:
                 "weight": 20.0,
                 "status": "Optimal" if runway_score >= 80 else ("Fair" if runway_score >= 50 else "Needs Attention"),
                 "benchmark": "3 to 6 months of essentials",
-                "details": f"Current runway: {runway_months:.1f} months based on ${savings_balance:,.0f} liquid reserve."
+                "details": f"Current runway: {runway_months:.1f} months based on {format_inr_score(savings_balance)} liquid reserve."
             },
             {
                 "name": "Debt & Fixed Obligations",
@@ -190,7 +213,7 @@ class HealthScoringEngine:
                 "category": "Savings",
                 "impact": f"+{uplift} Score Points",
                 "difficulty": "Easy",
-                "action": f"Set up an automatic sweep of ${(monthly_income * 0.05):,.0f}/mo on payday to your high-yield savings account."
+                "action": f"Set up an automatic sweep of {format_inr_score(monthly_income * 0.05)}/mo on payday to your high-yield savings account."
             })
 
         if runway_months < 3.0:
@@ -200,7 +223,7 @@ class HealthScoringEngine:
                 "category": "Runway",
                 "impact": "+7.5 Score Points",
                 "difficulty": "Medium",
-                "action": f"Target accumulating ${shortfall:,.0f} in liquid reserves to cover 3 full months of essential living expenses."
+                "action": f"Target accumulating {format_inr_score(shortfall)} in liquid reserves to cover 3 full months of essential living expenses."
             })
 
         if discretionary_ratio > 0.32:
@@ -212,7 +235,7 @@ class HealthScoringEngine:
                 "category": "Discretionary",
                 "impact": "+5.0 Score Points",
                 "difficulty": "Easy",
-                "action": f"Trimming dining & delivery orders by ~${target_cut:,.0f}/mo brings your Wants ratio under the 50/30/20 benchmark."
+                "action": f"Trimming dining & delivery orders by ~{format_inr_score(target_cut)}/mo brings your Wants ratio under the 50/30/20 benchmark."
             })
 
         if debt_ratio > 0.25:
