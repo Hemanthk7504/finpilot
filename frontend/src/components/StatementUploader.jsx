@@ -156,25 +156,31 @@ export default function StatementUploader({ onUploadSuccess, isModal = false, on
               <span>Statement Processed Successfully</span>
             </div>
             <span className="text-[11px] font-mono text-emerald-300">
-              {uploadResult.records_ingested} records
+              {uploadResult.records_ingested || uploadResult.total_transactions_parsed || 0} records
             </span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-emerald-500/20 text-xs text-slate-300">
             <div>
               <span className="text-slate-400 block text-[10px]">Credits (Inflows)</span>
-              <strong className="text-emerald-400 font-numeric">{formatINR(uploadResult.total_inflow)}</strong>
+              <strong className="text-emerald-400 font-numeric">{formatINR(uploadResult.total_inflow || 0)}</strong>
             </div>
             <div>
               <span className="text-slate-400 block text-[10px]">Debits (Outflows)</span>
-              <strong className="text-rose-400 font-numeric">{formatINR(uploadResult.total_outflow)}</strong>
+              <strong className="text-rose-400 font-numeric">{formatINR(uploadResult.total_outflow || 0)}</strong>
             </div>
             <div>
               <span className="text-slate-400 block text-[10px]">Anomalies Flagged</span>
-              <strong className="text-amber-400">{uploadResult.anomalies_flagged}</strong>
+              <strong className="text-amber-400">{uploadResult.anomalies_detected ?? uploadResult.anomalies_flagged ?? 0}</strong>
             </div>
             <div>
               <span className="text-slate-400 block text-[10px]">Date Range</span>
-              <strong className="text-slate-200 truncate block text-[11px]">{uploadResult.date_range}</strong>
+              <strong className="text-slate-200 truncate block text-[11px]">
+                {uploadResult.date_range?.from && uploadResult.date_range?.to
+                  ? `${uploadResult.date_range.from} - ${uploadResult.date_range.to}`
+                  : typeof uploadResult.date_range === "string"
+                  ? uploadResult.date_range
+                  : "Recent"}
+              </strong>
             </div>
           </div>
         </div>

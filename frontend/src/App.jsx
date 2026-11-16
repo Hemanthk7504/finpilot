@@ -455,16 +455,14 @@ export default function App() {
       )}
 
       {isUploadModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-150">
-          <StatementUploader
-            isModal={true}
-            onClose={() => setIsUploadModalOpen(false)}
-            onUploadSuccess={() => {
-              loadAllData();
-              setTimeout(() => setIsUploadModalOpen(false), 1200);
-            }}
-          />
-        </div>
+        <StatementUploader
+          isModal={true}
+          onClose={() => setIsUploadModalOpen(false)}
+          onUploadSuccess={() => {
+            loadAllData();
+            setTimeout(() => setIsUploadModalOpen(false), 1500);
+          }}
+        />
       )}
 
       {isSalaryModalOpen && (
