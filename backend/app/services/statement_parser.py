@@ -4,6 +4,7 @@ import csv
 from datetime import datetime
 from typing import List, Dict, Any, Tuple, Optional
 import pandas as pd
+import fitz
 from pypdf import PdfReader
 
 class StatementParser:
@@ -16,8 +17,8 @@ class StatementParser:
     DATE_PATTERNS = [
         "%d-%m-%Y", "%d/%m/%Y", "%d-%b-%Y", "%d %b %Y",
         "%d/%m/%y", "%d-%m-%y", "%Y-%m-%d", "%d %B %Y",
-        "%b %d, %Y", "%m/%d/%Y", "%Y/%m/%d", "%b %d %Y",
-        "%d/%b/%Y", "%Y-%m-%dT%H:%M:%S"
+        "%b %d, %Y", "%b %d %Y", "%B %d, %Y", "%B %d %Y",
+        "%m/%d/%Y", "%Y/%m/%d", "%d/%b/%Y", "%Y-%m-%dT%H:%M:%S"
     ]
 
     UPI_BANK_PATTERNS = [
@@ -44,12 +45,12 @@ class StatementParser:
 
     @classmethod
     def clean_merchant_name(cls, raw: str) -> str:
-        """Strip transaction noise, card auth numbers, and payment rails to isolate merchant name."""
+        """Strip transaction noise, card auth numbers, and payment rails to isolate merchant/payee name."""
         if not raw:
             return "Unknown"
         text = str(raw).strip()
 
-        # Handle specific cases first
+        # Handle specific cashback cases first
         lower = text.lower()
         if "cashback from phonepe" in lower or "phonepe cashback" in lower:
             return "PhonePe Cashback"
@@ -94,11 +95,11 @@ class StatementParser:
         if not text:
             text = str(raw).strip()[:30]
 
-        # Proper casing
+        # Proper casing up to 6 words
         words = text.split()
         cleaned_words = []
-        for w in words[:4]:
-            if w.upper() in ["UPI", "POS", "ATM", "GST", "SIP", "EMI", "FD", "RD", "TCS", "HCL", "IBM", "LIC", "IOCL", "BPCL", "HPCL", "IRCTC", "BBPS", "BESCOM"]:
+        for w in words[:6]:
+            if w.upper() in ["UPI", "POS", "ATM", "GST", "SIP", "EMI", "FD", "RD", "TCS", "HCL", "IBM", "LIC", "IOCL", "BPCL", "HPCL", "IRCTC", "BBPS", "BESCOM", "D/O", "S/O", "W/O"]:
                 cleaned_words.append(w.upper())
             else:
                 cleaned_words.append(w.capitalize())
@@ -113,7 +114,7 @@ class StatementParser:
             return val.to_pydatetime() if hasattr(val, "to_pydatetime") else val
         
         val_str = str(val).strip()
-        # Clean timestamps like "12-Nov-2026, 04:30 PM" -> "12-Nov-2026"
+        # Clean timestamps like "Nov 14, 2026, 02:32 pm" or "12-Nov-2026, 04:30 PM"
         val_clean = val_str.split(",")[0].strip() if "," in val_str and any(m in val_str for m in ["AM", "PM", "am", "pm"]) else val_str
         
         for fmt in cls.DATE_PATTERNS:
@@ -252,58 +253,151 @@ class StatementParser:
         """
         Extract bank and payment statement tables and line items from PDF.
         Supports PhonePe, GPay, Paytm, and Indian bank PDF statement formats.
+        Uses PyMuPDF (fitz) with fallback to pypdf for maximum text extraction accuracy.
         """
-        pdf_file = io.BytesIO(content)
-        reader = PdfReader(pdf_file)
-        full_text = []
+        full_text = ""
+        # 1. Try PyMuPDF first
+        try:
+            doc = fitz.open(stream=content, filetype="pdf")
+            for page in doc:
+                full_text += page.get_text("text") + "\n"
+        except Exception:
+            full_text = ""
 
-        for page in reader.pages:
-            extracted = page.extract_text()
-            if extracted:
-                full_text.extend(extracted.splitlines())
+        # 2. Fallback to pypdf if PyMuPDF extracted nothing
+        if not full_text.strip():
+            try:
+                reader = PdfReader(io.BytesIO(content))
+                for page in reader.pages:
+                    extracted = page.extract_text()
+                    if extracted:
+                        full_text += extracted + "\n"
+            except Exception:
+                pass
 
+        if not full_text.strip():
+            return []
+
+        lines = [l.strip() for l in full_text.splitlines() if l.strip()]
         parsed_transactions = []
 
-        # Pattern 1: Standard Bank Line: DATE | DESCRIPTION | AMOUNT | [DR/CR]
-        # Example: 15-11-2026 Swiggy Bangalore ₹ 450.00 Dr
-        # Example: 12/11/2026 UPI/DR/431789234125/Swiggy/HDFC 450.00
+        # -----------------------------------------------------------------
+        # STRATEGY 1: PhonePe / Multi-line Mobile Payment Block Parser
+        # Handles PhonePe, GPay, and Paytm PDF statements where each entry
+        # spans multiple lines: Date, Time, Payee/Payer, UTR, Type, Amount
+        # -----------------------------------------------------------------
+        date_line_regex = re.compile(
+            r'^(?:[A-Za-z]{3,9}\s+\d{1,2},?\s+\d{4}|\d{1,2}\s+[A-Za-z]{3,9},?\s+\d{4}|\d{1,2}[-/\.]\d{1,2}[-/\.]\d{2,4}|\d{1,2}[-/\.][A-Za-z]{3,9}[-/\.]\d{2,4})',
+            re.IGNORECASE
+        )
+
+        date_indices = []
+        for idx, line in enumerate(lines):
+            # Skip header range like "15 Oct, 2026 - 14 Nov, 2026"
+            if " - " in line or " to " in line.lower() or "statement" in line.lower():
+                continue
+            if date_line_regex.match(line):
+                date_indices.append(idx)
+
+        if len(date_indices) >= 1:
+            for k in range(len(date_indices)):
+                start_idx = date_indices[k]
+                end_idx = date_indices[k + 1] if k + 1 < len(date_indices) else len(lines)
+                block = lines[start_idx:end_idx]
+                date_val = block[0]
+
+                narration = ""
+                txn_type = None
+                amount = None
+
+                for b_i, bl in enumerate(block[1:], 1):
+                    bl_clean = bl.strip()
+                    bl_lower = bl_clean.lower()
+                    bl_upper = bl_clean.upper()
+
+                    # Ignore failed or declined transactions
+                    if any(bad in bl_lower for bad in ["failed", "declined", "cancelled", "rejected"]):
+                        amount = None
+                        break
+
+                    # Detect CREDIT vs DEBIT
+                    if not txn_type:
+                        if re.search(r'(?:^|[\s/_])(?:CREDIT|CR|RECEIVED|DEPOSIT)(?:$|[\s/_])', bl_upper):
+                            txn_type = "credit"
+                        elif re.search(r'(?:^|[\s/_])(?:DEBIT|DR|WITHDRAWAL|PAID)(?:$|[\s/_])', bl_upper):
+                            txn_type = "debit"
+
+                    # Detect Narration / Payee / Payer
+                    if not narration:
+                        if re.search(r'^(?:Paid to|Payment to|Received from|Refund from|Cashback from|AutoPay to|Subscription to|Transfer to)', bl_clean, re.IGNORECASE):
+                            if bl_clean.lower() in ["paid to", "payment to", "received from", "transfer to"] and b_i + 1 < len(block):
+                                # Multi-line recipient name
+                                narration = f"{bl_clean} {block[b_i + 1].strip()}"
+                            else:
+                                narration = bl_clean
+                        elif any(k in bl_lower for k in ["salary", "upi/", "upi-", "ach ", "imps", "neft", "pos "]):
+                            narration = bl_clean
+
+                    # Detect Amount: ignore UTR, Txn ID, and Account masking
+                    if amount is None:
+                        # Skip lines starting with metadata keywords, timestamps, or account masking
+                        if not any(bl_lower.startswith(p) for p in ["utr", "transaction", "txn", "ref", "credited to", "paid by", "chq", "account", "a/c"]) and "xxxx" not in bl_lower and not re.search(r'^\d{1,2}:\d{2}', bl_clean):
+                            # Matches amount lines like ₹500, ■500, I500, 450.00, Rs. 1,200.50
+                            m = re.match(r'^(?:[₹■I\$\u20b9]|Rs\.?|INR)?\s*([\d,]+(?:\.\d{1,2})?)$', bl_clean, re.IGNORECASE)
+                            if m:
+                                raw_num = m.group(1).replace(",", "")
+                                # Disregard long reference / UTR integers without decimals
+                                if "." not in raw_num and len(raw_num) >= 9:
+                                    continue
+                                try:
+                                    val = float(raw_num)
+                                    if 0 < val < 10000000:
+                                        amount = val
+                                except ValueError:
+                                    pass
+
+                # Fallback narration from block lines if still empty
+                if not narration and len(block) > 1:
+                    for candidate in block[1:]:
+                        cand_l = candidate.lower()
+                        if not re.search(r'^\d{1,2}:\d{2}', candidate) and not any(cand_l.startswith(p) for p in ["utr", "transaction", "txn", "ref", "chq", "xxxx", "balance"]) and candidate.upper() not in ["DEBIT", "CREDIT", "DR", "CR"]:
+                            if not re.match(r'^(?:[₹■I\$\u20b9]|Rs\.?|INR)?\s*[\d,]+(?:\.\d{1,2})?$', candidate):
+                                narration = candidate
+                                break
+
+                # Fallback direction from narration
+                if not txn_type and narration:
+                    n_lower = narration.lower()
+                    if any(k in n_lower for k in ["received", "refund", "cashback", "credit", "cr", "salary"]):
+                        txn_type = "credit"
+                    else:
+                        txn_type = "debit"
+
+                if narration and amount is not None and amount > 0:
+                    if narration.lower() in ["date", "transaction details", "type", "amount", "details", "particulars", "description", "statement"]:
+                        continue
+                    parsed_transactions.append({
+                        "date": cls.parse_date(date_val),
+                        "raw_narration": narration,
+                        "clean_merchant": cls.clean_merchant_name(narration),
+                        "amount": round(amount, 2),
+                        "type": txn_type or "debit"
+                    })
+
+        if parsed_transactions:
+            return parsed_transactions
+
+        # -----------------------------------------------------------------
+        # STRATEGY 2: Single-Line Row Parser (Bank Statement lines)
+        # -----------------------------------------------------------------
         line_regex = re.compile(
-            r'(\d{1,4}[-/\.]\d{1,2}[-/\.]\d{2,4}|\d{1,2}\s+[A-Za-z]{3}\s+\d{4})\s+(.+?)\s+([₹\$€£]?\s*[\d,]+\.\d{2})\s*(cr|dr|credit|debit|success|completed|successful)?',
+            r'(\d{1,4}[-/\.]\d{1,2}[-/\.]\d{2,4}|\d{1,2}\s+[A-Za-z]{3}\s+\d{4})\s+(.+?)\s+([₹■I\$€£]?\s*[\d,]+(?:\.\d{1,2})?)\s*(cr|dr|credit|debit|success|completed|successful)?',
             re.IGNORECASE
         )
 
-        # Pattern 2: PhonePe transaction card format in PDF:
-        # "12 Nov 2026 Paid to Swiggy ₹ 450.00"
-        phonepe_regex = re.compile(
-            r'(\d{1,2}\s+[A-Za-z]{3}\s+\d{4})\s+(Paid to\s+.+?|Received from\s+.+?|Cashback from\s+.+?)\s+[₹Rs\.\s]*([\d,]+\.\d{2})',
-            re.IGNORECASE
-        )
-
-        for line in full_text:
+        for line in lines:
             line_str = line.strip()
-            if not line_str:
-                continue
-
-            # Skip failed transactions in PDF
-            if any(bad in line_str.lower() for bad in ["failed", "declined", "cancelled", "rejected"]):
-                continue
-
-            match = phonepe_regex.search(line_str)
-            if match:
-                date_str, desc, amt_str = match.groups()
-                clean_amt = cls._clean_num(amt_str)
-                if not clean_amt:
-                    continue
-                amount = float(clean_amt)
-                desc_lower = desc.lower()
-                txn_type = "credit" if any(k in desc_lower for k in ["received", "refund", "cashback", "credit"]) else "debit"
-                parsed_transactions.append({
-                    "date": cls.parse_date(date_str),
-                    "raw_narration": desc.strip(),
-                    "clean_merchant": cls.clean_merchant_name(desc),
-                    "amount": round(amount, 2),
-                    "type": txn_type
-                })
+            if not line_str or any(bad in line_str.lower() for bad in ["failed", "declined", "cancelled", "rejected"]):
                 continue
 
             match = line_regex.search(line_str)
@@ -321,11 +415,10 @@ class StatementParser:
                 else:
                     txn_type = "debit"
 
-                clean_merchant = cls.clean_merchant_name(desc)
                 parsed_transactions.append({
                     "date": cls.parse_date(date_str),
                     "raw_narration": desc.strip(),
-                    "clean_merchant": clean_merchant,
+                    "clean_merchant": cls.clean_merchant_name(desc),
                     "amount": round(amount, 2),
                     "type": txn_type
                 })
@@ -344,6 +437,6 @@ class StatementParser:
     def _clean_num(val: str) -> str:
         if not val:
             return ""
-        # Remove currency symbols (₹, $, €, £), Rs., commas, spaces
+        # Remove currency symbols (₹, ■, I, $, €, £), Rs., commas, spaces
         cleaned = re.sub(r'[^\d\.\-]', '', str(val).strip())
         return cleaned if cleaned and cleaned != '-' else ""
