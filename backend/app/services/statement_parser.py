@@ -423,6 +423,24 @@ class StatementParser:
                     "type": txn_type
                 })
 
+        if parsed_transactions:
+            return parsed_transactions
+
+        # -----------------------------------------------------------------
+        # STRATEGY 3: Hugging Face AI Fallback Parser
+        # Handles non-standard, free-form, or unstructured statements using
+        # Hugging Face Transformer NER and pattern recognition.
+        # -----------------------------------------------------------------
+        try:
+            from backend.app.services.hf_statement_parser import HuggingFaceStatementParser
+            hf_txns = HuggingFaceStatementParser.parse_unstructured_text(full_text)
+            if hf_txns:
+                for t in hf_txns:
+                    t["clean_merchant"] = cls.clean_merchant_name(t.get("clean_merchant", "Unknown"))
+                return hf_txns
+        except Exception:
+            pass
+
         return parsed_transactions
 
     @staticmethod

@@ -364,7 +364,17 @@ class TransactionCategorizer:
             except Exception:
                 pass
 
-        # 3. Fallbacks based on txn_type
+        # 3. Hugging Face Semantic Zero-Shot Fallback
+        # When merchant is unfamiliar and ML confidence is low, use Hugging Face MiniLM embeddings
+        try:
+            from backend.app.services.hf_statement_parser import HuggingFaceStatementParser
+            hf_cat, hf_conf = HuggingFaceStatementParser.semantic_categorize(combined)
+            if hf_cat and hf_conf >= 0.28:
+                return hf_cat, round(float(hf_conf), 2)
+        except Exception:
+            pass
+
+        # 4. Fallbacks based on txn_type
         if txn_type == "credit":
             return "Salary & Income", 0.60
         return "Miscellaneous", 0.40
