@@ -8,11 +8,11 @@ class UserRegister(BaseModel):
     email: str
     password: str
     monthly_income: Optional[float] = 0.0
-    currency: Optional[str] = "$"
+    currency: Optional[str] = "₹"
 
 class UpdateSalaryRequest(BaseModel):
     monthly_income: float
-    currency: Optional[str] = "$"
+    currency: Optional[str] = "₹"
 
 
 class UserLogin(BaseModel):

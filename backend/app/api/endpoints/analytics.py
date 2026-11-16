@@ -94,7 +94,7 @@ def get_financial_overview(
         "health_grade": health_result["grade"],
         "health_title": health_result["rating_title"],
         "anomaly_count": anomaly_count,
-        "currency": user.currency if user else "$"
+        "currency": (user.currency if user and user.currency and user.currency != "$" else "₹")
     }
 
 @router.get("/categories")

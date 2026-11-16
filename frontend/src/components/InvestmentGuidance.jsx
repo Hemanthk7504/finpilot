@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { TrendingUp, Shield, PieChart as PieIcon, Calculator, ArrowRight, DollarSign } from "lucide-react";
+import { TrendingUp, Shield, PieChart as PieIcon, Calculator, ArrowRight } from "lucide-react";
+import { formatINR } from "../utils/currency";
 
 export default function InvestmentGuidance() {
   const [riskProfile, setRiskProfile] = useState("Balanced"); // Conservative, Balanced, Growth
-  const [monthlySIP, setMonthlySIP] = useState(500);
+  const [monthlySIP, setMonthlySIP] = useState(10000);
   const [years, setYears] = useState(10);
-  const [expectedReturn, setExpectedReturn] = useState(10);
+  const [expectedReturn, setExpectedReturn] = useState(12);
   const [adjustInflation, setAdjustInflation] = useState(false);
 
   // Asset allocations by profile
@@ -141,13 +142,13 @@ export default function InvestmentGuidance() {
             <div>
               <div className="flex justify-between text-xs mb-1.5">
                 <span className="text-slate-300 font-medium">Monthly Investment Amount</span>
-                <span className="text-white font-bold">${monthlySIP}/mo</span>
+                <span className="text-white font-bold font-numeric">{formatINR(monthlySIP)}/mo</span>
               </div>
               <input
                 type="range"
-                min="50"
-                max="3000"
-                step="50"
+                min="1000"
+                max="100000"
+                step="1000"
                 value={monthlySIP}
                 onChange={(e) => setMonthlySIP(Number(e.target.value))}
                 className="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
@@ -193,19 +194,19 @@ export default function InvestmentGuidance() {
               <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold block">
                 Estimated Maturity Value {adjustInflation && "(Real Purchasing Power)"}
               </span>
-              <div className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mt-1">
-                ${Math.round(futureValue).toLocaleString()}
+              <div className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mt-1 font-numeric">
+                {formatINR(futureValue)}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800 text-xs">
               <div>
                 <span className="text-slate-400 block text-[11px]">Total Principal Invested</span>
-                <strong className="text-white text-sm">${investedAmount.toLocaleString()}</strong>
+                <strong className="text-white text-sm font-numeric">{formatINR(investedAmount)}</strong>
               </div>
               <div>
                 <span className="text-slate-400 block text-[11px]">Estimated Wealth Gain</span>
-                <strong className="text-emerald-400 text-sm">+${Math.round(totalGain).toLocaleString()}</strong>
+                <strong className="text-emerald-400 text-sm font-numeric">+{formatINR(totalGain)}</strong>
               </div>
             </div>
 

@@ -90,7 +90,7 @@ export async function getCurrentUser() {
   return user;
 }
 
-export async function updateUserSalary(monthlyIncome, currency = "$") {
+export async function updateUserSalary(monthlyIncome, currency = "₹") {
   const res = await fetch(`${API_BASE}/auth/salary`, {
     method: "PUT",
     headers: getAuthHeaders(),

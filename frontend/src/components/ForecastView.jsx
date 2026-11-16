@@ -11,6 +11,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { TrendingUp, Calendar, AlertCircle, Clock, Zap } from "lucide-react";
+import { formatINR } from "../utils/currency";
 
 export default function ForecastView({ forecastData }) {
   const forecastDays = forecastData?.forecast_days || [];
@@ -27,10 +28,10 @@ export default function ForecastView({ forecastData }) {
           <p className="font-semibold text-white">{data.day_label || label} ({data.date})</p>
           <div className="mt-1.5 space-y-1">
             <p className="text-cyan-400">
-              Projected Balance: <strong className="text-white">${data.predicted_balance?.toLocaleString()}</strong>
+              Projected Balance: <strong className="text-white font-numeric">{formatINR(data.predicted_balance)}</strong>
             </p>
             <p className="text-indigo-400">
-              Predicted Outflow: <strong className="text-white">${data.predicted_expense?.toLocaleString()}</strong>
+              Predicted Outflow: <strong className="text-white font-numeric">{formatINR(data.predicted_expense)}</strong>
             </p>
             {data.has_scheduled_bill && (
               <p className="text-amber-400 font-medium">
@@ -61,7 +62,7 @@ export default function ForecastView({ forecastData }) {
 
           <div className="flex items-center gap-2 text-xs">
             <div className="rounded-lg bg-slate-800 px-3 py-1.5 border border-slate-700 text-slate-300">
-              Projected EOM Balance: <strong className="text-emerald-400 font-bold">${projectedEOM.toLocaleString()}</strong>
+              Projected EOM Balance: <strong className="text-emerald-400 font-bold font-numeric">{formatINR(projectedEOM)}</strong>
             </div>
           </div>
         </div>
@@ -83,7 +84,7 @@ export default function ForecastView({ forecastData }) {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" vertical={false} />
               <XAxis dataKey="day_label" stroke="#64748B" fontSize={11} tickLine={false} interval={4} />
-              <YAxis stroke="#64748B" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v}`} />
+              <YAxis stroke="#64748B" fontSize={11} tickLine={false} tickFormatter={(v) => `₹${v}`} />
               <Tooltip content={<CustomForecastTooltip />} />
               <Area
                 type="monotone"
@@ -143,7 +144,7 @@ export default function ForecastView({ forecastData }) {
                   <span className="text-[11px] text-slate-400">{sub.category}</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-bold text-white text-sm">${sub.average_amount.toFixed(2)}</span>
+                  <span className="font-bold text-white text-sm font-numeric">{formatINR(sub.average_amount)}</span>
                   <span className="text-[10px] text-slate-400 block">{sub.frequency}</span>
                 </div>
               </div>

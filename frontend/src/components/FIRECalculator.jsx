@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Flame, TrendingUp, Calculator, ShieldCheck, ArrowRight, DollarSign, Calendar, Sparkles } from "lucide-react";
+import { Flame, TrendingUp, Calculator, ShieldCheck, ArrowRight, Calendar, Sparkles } from "lucide-react";
 import { simulateFIRE } from "../services/api";
+import { formatINR } from "../utils/currency";
 
 export default function FIRECalculator({ overview, currentUser }) {
-  const annualIncome = (currentUser?.monthly_income || overview?.monthly_income || 6500) * 12;
-  const [annualExpense, setAnnualExpense] = useState(Math.round(annualIncome * 0.6));
-  const [currentPortfolio, setCurrentPortfolio] = useState(25000);
-  const [monthlySavings, setMonthlySavings] = useState(1500);
-  const [expectedReturn, setExpectedReturn] = useState(8.0);
+  const annualIncome = (currentUser?.monthly_income || overview?.monthly_income || 75000) * 12;
+  const [annualExpense, setAnnualExpense] = useState(Math.round(annualIncome * 0.5) || 450000);
+  const [currentPortfolio, setCurrentPortfolio] = useState(350000);
+  const [monthlySavings, setMonthlySavings] = useState(25000);
+  const [expectedReturn, setExpectedReturn] = useState(12.0); // Equity mutual fund CAGR in India
   const [swr, setSwr] = useState(4.0); // Safe Withdrawal Rate %
 
   const [fireData, setFireData] = useState(null);
@@ -25,7 +26,7 @@ export default function FIRECalculator({ overview, currentUser }) {
       });
       setFireData(data);
     } catch {
-      // Local fallback calculation if backend takes time
+      // Local fallback calculation
       const target = annualExpense * (100 / swr);
       const lean = annualExpense * 0.75 * 25;
       const fat = annualExpense * 1.5 * 33.3;
@@ -33,7 +34,7 @@ export default function FIRECalculator({ overview, currentUser }) {
         traditional_fire_target: target,
         lean_fire_target: lean,
         fat_fire_target: fat,
-        years_to_fire: Math.max(1, Math.round((target - currentPortfolio) / (monthlySavings * 12 + target * 0.04) * 10) / 10),
+        years_to_fire: Math.max(1, Math.round(((target - currentPortfolio) / (monthlySavings * 12 + target * 0.04)) * 10) / 10),
         current_progress_pct: Math.min(100, Math.round((currentPortfolio / target) * 100)),
       });
     } finally {
@@ -50,18 +51,18 @@ export default function FIRECalculator({ overview, currentUser }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/60 pb-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-rose-500 text-white shadow-lg shadow-amber-500/25">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-rose-600 text-white shadow-lg shadow-amber-500/25">
             <Flame className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <span>FIRE (Financial Independence, Retire Early) Engine</span>
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <span>F.I.R.E. Independence &amp; Early Retirement Simulator</span>
               <span className="rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-400">
-                4% Rule Model
+                Trinity Rule Model
               </span>
             </h3>
             <p className="text-xs text-slate-400">
-              Calculate your exact Freedom Number and retirement timeline based on safe withdrawal math.
+              Calculate Lean FIRE, Traditional FIRE, and Fat FIRE milestones with dynamic withdrawal simulations.
             </p>
           </div>
         </div>
@@ -69,9 +70,9 @@ export default function FIRECalculator({ overview, currentUser }) {
         {fireData && (
           <div className="flex items-center gap-3 bg-slate-950/60 border border-slate-800 rounded-2xl p-2.5 px-4 shrink-0">
             <div>
-              <span className="text-[10px] uppercase font-bold text-slate-400">Target Freedom Date</span>
-              <p className="text-base font-extrabold text-amber-400 font-numeric">
-                In ~{fireData.years_to_fire} Years
+              <span className="text-[10px] uppercase font-bold text-slate-400">Est. Years to Freedom</span>
+              <p className="text-xl font-black text-amber-400 font-numeric">
+                {fireData.years_to_fire} Years
               </p>
             </div>
           </div>
@@ -87,7 +88,7 @@ export default function FIRECalculator({ overview, currentUser }) {
             <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">75% Core</span>
           </div>
           <div className="mt-2 text-xl font-bold font-numeric text-white">
-            ${fireData?.lean_fire_target?.toLocaleString() || "..."}
+            {fireData?.lean_fire_target ? formatINR(fireData.lean_fire_target) : "..."}
           </div>
           <p className="mt-1 text-[11px] text-slate-400">Essential living expenses covered completely.</p>
         </div>
@@ -104,7 +105,7 @@ export default function FIRECalculator({ overview, currentUser }) {
             </span>
           </div>
           <div className="mt-2 text-2xl font-black font-numeric text-indigo-300">
-            ${fireData?.traditional_fire_target?.toLocaleString() || "..."}
+            {fireData?.traditional_fire_target ? formatINR(fireData.traditional_fire_target) : "..."}
           </div>
           <p className="mt-1 text-[11px] text-slate-300">Full current lifestyle sustained forever at {swr}% SWR.</p>
         </div>
@@ -116,7 +117,7 @@ export default function FIRECalculator({ overview, currentUser }) {
             <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">150% Luxury</span>
           </div>
           <div className="mt-2 text-xl font-bold font-numeric text-white">
-            ${fireData?.fat_fire_target?.toLocaleString() || "..."}
+            {fireData?.fat_fire_target ? formatINR(fireData.fat_fire_target) : "..."}
           </div>
           <p className="mt-1 text-[11px] text-slate-400">High travel, upgraded housing, and generous buffer.</p>
         </div>
@@ -144,13 +145,13 @@ export default function FIRECalculator({ overview, currentUser }) {
         <div className="space-y-2">
           <div className="flex justify-between text-xs font-semibold">
             <span className="text-slate-400">Annual Living Expense</span>
-            <span className="text-white font-numeric">${annualExpense.toLocaleString()}</span>
+            <span className="text-white font-numeric">{formatINR(annualExpense)}</span>
           </div>
           <input
             type="range"
-            min="15000"
-            max="150000"
-            step="1000"
+            min="100000"
+            max="3000000"
+            step="25000"
             value={annualExpense}
             onChange={(e) => setAnnualExpense(Number(e.target.value))}
             className="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
@@ -161,13 +162,13 @@ export default function FIRECalculator({ overview, currentUser }) {
         <div className="space-y-2">
           <div className="flex justify-between text-xs font-semibold">
             <span className="text-slate-400">Invested Portfolio</span>
-            <span className="text-white font-numeric">${currentPortfolio.toLocaleString()}</span>
+            <span className="text-white font-numeric">{formatINR(currentPortfolio)}</span>
           </div>
           <input
             type="range"
             min="0"
-            max="300000"
-            step="2500"
+            max="5000000"
+            step="50000"
             value={currentPortfolio}
             onChange={(e) => setCurrentPortfolio(Number(e.target.value))}
             className="w-full accent-cyan-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
@@ -178,13 +179,13 @@ export default function FIRECalculator({ overview, currentUser }) {
         <div className="space-y-2">
           <div className="flex justify-between text-xs font-semibold">
             <span className="text-slate-400">Monthly Contribution</span>
-            <span className="text-emerald-400 font-numeric">${monthlySavings.toLocaleString()}/mo</span>
+            <span className="text-emerald-400 font-numeric">{formatINR(monthlySavings)}/mo</span>
           </div>
           <input
             type="range"
-            min="100"
-            max="8000"
-            step="100"
+            min="1000"
+            max="150000"
+            step="2500"
             value={monthlySavings}
             onChange={(e) => setMonthlySavings(Number(e.target.value))}
             className="w-full accent-emerald-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
@@ -194,13 +195,13 @@ export default function FIRECalculator({ overview, currentUser }) {
         {/* Expected Return */}
         <div className="space-y-2">
           <div className="flex justify-between text-xs font-semibold">
-            <span className="text-slate-400">Portfolio Growth Rate</span>
-            <span className="text-white font-numeric">{expectedReturn}% / yr</span>
+            <span className="text-slate-400">Portfolio CAGR</span>
+            <span className="text-white font-numeric">{expectedReturn}%</span>
           </div>
           <input
             type="range"
-            min="4"
-            max="14"
+            min="6.0"
+            max="18.0"
             step="0.5"
             value={expectedReturn}
             onChange={(e) => setExpectedReturn(Number(e.target.value))}

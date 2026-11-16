@@ -45,8 +45,8 @@ export default function Navbar({
   const healthScore = overview?.health_score ?? 81.2;
   const healthGrade = overview?.health_grade ?? "A";
   const monthlySalary = currentUser?.monthly_income ?? overview?.monthly_income ?? 0;
-  const currencySymbol = currentCurrency?.symbol || "$";
-  const currencyCode = currentCurrency?.code || "USD";
+  const currencySymbol = currentCurrency?.symbol || "₹";
+  const currencyCode = currentCurrency?.code || "INR";
 
   const getScoreColor = (score) => {
     if (score >= 80) return "text-emerald-400 border-emerald-500/30 bg-emerald-500/10";

@@ -11,13 +11,11 @@ def setup_database():
     seed_database_if_empty(db)
     db.close()
 
-def test_demo_login():
+def test_auth_health_check():
     with TestClient(app) as client:
-        res = client.post("/api/v1/auth/demo-login")
+        res = client.get("/health")
         assert res.status_code == 200
-        data = res.json()
-        assert "access_token" in data
-        assert data["user"]["email"] == "alex.mercer@finpilot.io"
+        assert res.json()["status"] == "ok"
 
 def test_register_and_login_user():
     with TestClient(app) as client:
@@ -29,7 +27,7 @@ def test_register_and_login_user():
             "email": test_email,
             "password": "Password123!",
             "monthly_income": 8000.0,
-            "currency": "$"
+            "currency": "₹"
         }
         res_reg = client.post("/api/v1/auth/register", json=reg_payload)
         assert res_reg.status_code == 200

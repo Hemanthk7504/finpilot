@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { CreditCard, Zap, CheckCircle2, DollarSign, TrendingDown, Layers, HelpCircle } from "lucide-react";
+import { CreditCard, Zap, CheckCircle2, TrendingDown, Layers, HelpCircle } from "lucide-react";
 import { simulateDebtPayoff } from "../services/api";
+import { formatINR } from "../utils/currency";
 
 export default function DebtPayoffPlanner() {
-  const [extraPayment, setExtraPayment] = useState(250);
+  const [extraPayment, setExtraPayment] = useState(5000);
   const [debts, setDebts] = useState([
-    { id: 1, name: "Credit Card A", balance: 3400, apr: 24.99, minPayment: 100 },
-    { id: 2, name: "Auto Loan", balance: 9200, apr: 6.9, minPayment: 260 },
-    { id: 3, name: "Student Loan", balance: 14800, apr: 5.4, minPayment: 175 },
+    { id: 1, name: "HDFC Credit Card", balance: 85000, apr: 36.0, minPayment: 4200 },
+    { id: 2, name: "Car Loan EMI", balance: 320000, apr: 8.9, minPayment: 9800 },
+    { id: 3, name: "Personal Loan", balance: 145000, apr: 13.5, minPayment: 5400 },
   ]);
 
   const [simulation, setSimulation] = useState(null);
   const [activeStrategy, setActiveStrategy] = useState("avalanche");
 
   const totalBalance = debts.reduce((sum, d) => sum + d.balance, 0);
-  const totalMinPayment = debts.reduce((sum, d) => sum + d.minPayment, 0);
 
   const runSimulation = async () => {
     try {
@@ -34,15 +34,15 @@ export default function DebtPayoffPlanner() {
       setSimulation({
         snowball: {
           strategy: "Debt Snowball (Lowest Balance First)",
-          months_to_debt_free: 38,
-          total_interest: 3240,
-          interest_saved: 1420,
+          months_to_debt_free: 28,
+          total_interest: 48200,
+          interest_saved: 24500,
         },
         avalanche: {
           strategy: "Debt Avalanche (Highest APR First)",
-          months_to_debt_free: 35,
-          total_interest: 2610,
-          interest_saved: 2050,
+          months_to_debt_free: 24,
+          total_interest: 36800,
+          interest_saved: 35900,
         },
         recommended: "avalanche",
       });
@@ -78,7 +78,7 @@ export default function DebtPayoffPlanner() {
           <div>
             <span className="text-[10px] uppercase font-bold text-slate-400">Total Outstanding Debt</span>
             <p className="text-base font-extrabold text-rose-400 font-numeric">
-              ${totalBalance.toLocaleString()}
+              {formatINR(totalBalance)}
             </p>
           </div>
         </div>
@@ -116,7 +116,7 @@ export default function DebtPayoffPlanner() {
               <div>
                 <span className="text-[10px] text-slate-400 uppercase font-semibold">Interest Saved</span>
                 <p className="text-xl font-extrabold text-emerald-400 font-numeric">
-                  +${simulation.avalanche.interest_saved.toLocaleString()}
+                  +{formatINR(simulation.avalanche.interest_saved)}
                 </p>
               </div>
             </div>
@@ -151,7 +151,7 @@ export default function DebtPayoffPlanner() {
               <div>
                 <span className="text-[10px] text-slate-400 uppercase font-semibold">Interest Saved</span>
                 <p className="text-xl font-extrabold text-indigo-400 font-numeric">
-                  +${simulation.snowball.interest_saved.toLocaleString()}
+                  +{formatINR(simulation.snowball.interest_saved)}
                 </p>
               </div>
             </div>
@@ -172,15 +172,15 @@ export default function DebtPayoffPlanner() {
             </p>
           </div>
           <span className="text-base font-extrabold text-emerald-400 font-numeric">
-            +${extraPayment}/mo
+            +{formatINR(extraPayment)}/mo
           </span>
         </div>
 
         <input
           type="range"
-          min="50"
-          max="1500"
-          step="50"
+          min="1000"
+          max="30000"
+          step="1000"
           value={extraPayment}
           onChange={(e) => setExtraPayment(Number(e.target.value))}
           className="w-full accent-emerald-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
@@ -198,10 +198,10 @@ export default function DebtPayoffPlanner() {
             >
               <div className="space-y-0.5">
                 <p className="font-bold text-white">{d.name}</p>
-                <span className="text-[10px] text-slate-400">APR: {d.apr}% • Min: ${d.minPayment}/mo</span>
+                <span className="text-[10px] text-slate-400">APR: {d.apr}% • Min: {formatINR(d.minPayment)}/mo</span>
               </div>
               <div className="text-right">
-                <span className="font-extrabold font-numeric text-white">${d.balance.toLocaleString()}</span>
+                <span className="font-extrabold font-numeric text-white">{formatINR(d.balance)}</span>
               </div>
             </div>
           ))}

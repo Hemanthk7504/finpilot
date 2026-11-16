@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { formatINR } from "../utils/currency";
 import {
   Sparkles,
   Bot,
@@ -17,7 +18,6 @@ import {
   ChevronRight,
   Compass,
   Zap,
-  DollarSign,
   ShieldAlert,
   Sliders,
   Check,
@@ -25,9 +25,9 @@ import {
 } from "lucide-react";
 
 export default function HomePage({ onLaunchApp, onOpenAuth, currentUser }) {
-  const [sipAmount, setSipAmount] = useState(600);
+  const [sipAmount, setSipAmount] = useState(10000);
   const [sipYears, setSipYears] = useState(10);
-  const [sipRate, setSipRate] = useState(10);
+  const [sipRate, setSipRate] = useState(12);
   const [activeFeatureTab, setActiveFeatureTab] = useState(0);
 
   // Compound interest calculation
@@ -112,7 +112,7 @@ export default function HomePage({ onLaunchApp, onOpenAuth, currentUser }) {
       subtitle: "Context-Aware Financial Co-Pilot",
       icon: Bot,
       color: "from-rose-500 to-pink-600",
-      description: "Ask natural language questions: 'Can I afford a $1,200 flight?', 'Where am I overspending?', or 'How can I save $400 more next month?'.",
+      description: "Ask natural language questions: 'Can I afford a ₹1,00,000 flight?', 'Where am I overspending?', or 'How can I save ₹25,000 more next month?'.",
       metrics: [
         { label: "Context Window", value: "Personal Ledger" },
         { label: "Response Time", value: "Instant" },
@@ -288,13 +288,13 @@ export default function HomePage({ onLaunchApp, onOpenAuth, currentUser }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-left">
               <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-3.5 space-y-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Liquid Balance</span>
-                <p className="text-xl font-bold font-numeric text-white">$14,820.50</p>
-                <span className="text-[10px] text-emerald-400 font-semibold">+30-Day Net: +$3,218.45</span>
+                <p className="text-xl font-bold font-numeric text-white">₹1,48,200.50</p>
+                <span className="text-[10px] text-emerald-400 font-semibold">+30-Day Net: +₹32,180.00</span>
               </div>
               <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-3.5 space-y-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">30-Day Net Cash Flow</span>
-                <p className="text-xl font-bold font-numeric text-emerald-400">+$3,218.45</p>
-                <span className="text-[10px] text-slate-400">In: $13,000 · Out: $9,782</span>
+                <p className="text-xl font-bold font-numeric text-emerald-400">+₹32,180.00</p>
+                <span className="text-[10px] text-slate-400">In: ₹1,30,000 · Out: ₹97,820</span>
               </div>
               <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-3.5 space-y-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Savings Rate</span>
@@ -335,21 +335,21 @@ export default function HomePage({ onLaunchApp, onOpenAuth, currentUser }) {
             <div>
               <div className="flex justify-between text-xs font-semibold mb-2">
                 <span className="text-slate-300">Monthly Contribution</span>
-                <span className="font-numeric text-indigo-400 text-sm font-bold">${sipAmount} /mo</span>
+                <span className="font-numeric text-indigo-400 text-sm font-bold">{formatINR(sipAmount)} /mo</span>
               </div>
               <input
                 type="range"
-                min="100"
-                max="5000"
-                step="50"
+                min="1000"
+                max="100000"
+                step="1000"
                 value={sipAmount}
                 onChange={(e) => setSipAmount(Number(e.target.value))}
                 className="w-full accent-indigo-500 cursor-pointer"
               />
               <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-                <span>$100</span>
-                <span>$2,500</span>
-                <span>$5,000</span>
+                <span>₹1,000</span>
+                <span>₹50,000</span>
+                <span>₹1,00,000</span>
               </div>
             </div>
 
@@ -389,9 +389,9 @@ export default function HomePage({ onLaunchApp, onOpenAuth, currentUser }) {
                 className="w-full accent-emerald-500 cursor-pointer"
               />
               <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-                <span>4% (Conservative)</span>
-                <span>10% (Index Equities)</span>
-                <span>18% (High Growth)</span>
+                <span>4% (Conservative FD)</span>
+                <span>12% (Nifty Index Equities)</span>
+                <span>18% (High Growth SmallCap)</span>
               </div>
             </div>
           </div>
@@ -402,20 +402,20 @@ export default function HomePage({ onLaunchApp, onOpenAuth, currentUser }) {
               Projected Maturity Corpus
             </span>
             <div className="text-4xl sm:text-5xl font-black font-numeric text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-cyan-300 to-emerald-300">
-              ${Math.round(futureValue).toLocaleString()}
+              {formatINR(futureValue)}
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
                 <span className="text-[10px] text-slate-400 block">Out of Pocket Principal</span>
                 <span className="text-sm font-bold font-numeric text-slate-200">
-                  ${Math.round(investedAmount).toLocaleString()}
+                  {formatINR(investedAmount)}
                 </span>
               </div>
               <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
-                <span className="text-[10px] text-emerald-300 block">Compound Gain (Interest)</span>
+                <span className="text-[10px] text-emerald-300 block">Compound Gain (Wealth Generated)</span>
                 <span className="text-sm font-bold font-numeric text-emerald-400">
-                  +${Math.round(wealthGain).toLocaleString()}
+                  +{formatINR(wealthGain)}
                 </span>
               </div>
             </div>

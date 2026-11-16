@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Repeat, Calendar, Trash2, CheckCircle2, TrendingDown, Scissors, DollarSign } from "lucide-react";
+import { Repeat, Calendar, Trash2, CheckCircle2, TrendingDown, Scissors } from "lucide-react";
+import { formatINR } from "../utils/currency";
 
 export default function SubscriptionAudit({ forecastData }) {
   const initialSubs = (forecastData?.detected_recurring || []).length > 0
@@ -12,11 +13,11 @@ export default function SubscriptionAudit({ forecastData }) {
         selectedToCut: false,
       }))
     : [
-        { id: 1, merchant: "Netflix Premium", amount: 22.99, frequency: "Monthly", annualCost: 275.88, selectedToCut: false },
-        { id: 2, merchant: "Spotify Family", amount: 16.99, frequency: "Monthly", annualCost: 203.88, selectedToCut: false },
-        { id: 3, merchant: "Amazon Prime", amount: 14.99, frequency: "Monthly", annualCost: 179.88, selectedToCut: false },
-        { id: 4, merchant: "Gym & Fitness Club", amount: 65.0, frequency: "Monthly", annualCost: 780.0, selectedToCut: false },
-        { id: 5, merchant: "iCloud Storage 2TB", amount: 9.99, frequency: "Monthly", annualCost: 119.88, selectedToCut: false },
+        { id: 1, merchant: "Netflix Premium", amount: 649, frequency: "Monthly", annualCost: 7788, selectedToCut: false },
+        { id: 2, merchant: "Spotify Premium", amount: 119, frequency: "Monthly", annualCost: 1428, selectedToCut: false },
+        { id: 3, merchant: "Amazon Prime Annual", amount: 299, frequency: "Monthly (amortized)", annualCost: 1499, selectedToCut: false },
+        { id: 4, merchant: "Cult.fit / Gym Fitness", amount: 2200, frequency: "Monthly", annualCost: 26400, selectedToCut: false },
+        { id: 5, merchant: "Airtel / Jio Fiber", amount: 1179, frequency: "Monthly", annualCost: 14148, selectedToCut: false },
       ];
 
   const [subs, setSubs] = useState(initialSubs);
@@ -36,29 +37,30 @@ export default function SubscriptionAudit({ forecastData }) {
 
   return (
     <div className="rounded-3xl border border-slate-800/80 bg-slate-900/80 p-6 backdrop-blur-xl space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/60 pb-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/25">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-rose-500 to-amber-600 text-white shadow-lg shadow-rose-500/25">
             <Repeat className="h-6 w-6" />
           </div>
           <div>
             <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <span>Smart Subscription Audit &amp; Cut Simulator</span>
-              <span className="rounded-full bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 text-[10px] font-bold text-purple-400">
-                {subs.length} Active
+              <span>Subscription &amp; Recurring Leakage Audit</span>
+              <span className="rounded-full bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 text-[10px] font-bold text-rose-400">
+                Auto-Detected
               </span>
             </h3>
             <p className="text-xs text-slate-400">
-              Audit recurring charges. Check unwanted services to simulate your annual savings.
+              Audit recurring charges, simulate cancellations, and quantify annual compounding gains.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 bg-slate-950/60 border border-slate-800 rounded-2xl p-2.5 px-4 shrink-0">
+        <div className="flex items-center gap-3 bg-slate-950/60 border border-slate-800 rounded-2xl p-2.5 px-4 shrink-0">
           <div>
-            <span className="text-[10px] uppercase font-semibold text-slate-400">Annual Total Drain</span>
+            <span className="text-[10px] uppercase font-bold text-slate-400">Annual Subscription Drain</span>
             <p className="text-base font-extrabold text-rose-400 font-numeric">
-              ${totalAnnualSpend.toLocaleString()}/yr
+              {formatINR(totalAnnualSpend)}/yr
             </p>
           </div>
         </div>
@@ -72,12 +74,12 @@ export default function SubscriptionAudit({ forecastData }) {
             <div>
               <h4 className="text-xs font-bold text-white">Cut Impact: {cutSubs.length} Subscriptions Selected</h4>
               <p className="text-[11px] text-slate-300">
-                Cutting these will free up <strong className="text-emerald-400 font-numeric">${potentialMonthlySaved.toFixed(2)}/mo</strong> to redirect into investments.
+                Cutting these will free up <strong className="text-emerald-400 font-numeric">{formatINR(potentialMonthlySaved)}/mo</strong> to redirect into mutual fund SIPs.
               </p>
             </div>
           </div>
           <span className="text-lg font-black font-numeric text-emerald-400">
-            +${potentialAnnualSaved.toFixed(0)}/yr
+            +{formatINR(potentialAnnualSaved)}/yr
           </span>
         </div>
       )}
@@ -111,10 +113,10 @@ export default function SubscriptionAudit({ forecastData }) {
 
             <div className="text-right">
               <p className="text-xs font-extrabold font-numeric text-white">
-                ${sub.amount.toFixed(2)}/mo
+                {formatINR(sub.amount)}/mo
               </p>
               <span className="text-[10px] text-slate-500 font-numeric">
-                ${sub.annualCost.toFixed(0)}/yr
+                {formatINR(sub.annualCost)}/yr
               </span>
             </div>
           </div>

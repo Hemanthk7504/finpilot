@@ -67,8 +67,8 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
         name=user_in.name,
         email=user_in.email.lower(),
         hashed_password=hashed_pwd,
-        currency=user_in.currency or "$",
-        monthly_income=user_in.monthly_income or 6500.0,
+        currency=user_in.currency or "₹",
+        monthly_income=user_in.monthly_income if (user_in.monthly_income and user_in.monthly_income > 0) else 75000.0,
         risk_profile="Balanced"
     )
     db.add(user)
@@ -77,15 +77,15 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
 
     # Seed baseline budgets & goals for this new user
     sample_budgets = [
-        ("Housing & Rent", user.monthly_income * 0.30),
-        ("Groceries", 600.0),
-        ("Utilities & Bills", 300.0),
-        ("Dining & Food Delivery", 350.0),
-        ("Shopping & Electronics", 300.0),
-        ("Entertainment & Subscriptions", 100.0),
-        ("Transportation & Fuel", 250.0),
-        ("Investments & Savings", user.monthly_income * 0.15),
-        ("Loans & Debt EMI", 350.0)
+        ("Housing & Rent", user.monthly_income * 0.25),
+        ("Groceries", user.monthly_income * 0.12),
+        ("Utilities & Bills", user.monthly_income * 0.06),
+        ("Dining & Food Delivery", user.monthly_income * 0.08),
+        ("Shopping & Electronics", user.monthly_income * 0.07),
+        ("Entertainment & Subscriptions", user.monthly_income * 0.03),
+        ("Transportation & Fuel", user.monthly_income * 0.06),
+        ("Investments & Savings", user.monthly_income * 0.20),
+        ("Loans & Debt EMI", user.monthly_income * 0.08)
     ]
     for cat_name, limit in sample_budgets:
         b = Budget(
@@ -99,19 +99,19 @@ def register(user_in: UserRegister, db: Session = Depends(get_db)):
     sample_goals = [
         Goal(
             user_id=user.id,
-            title="3-Month Emergency Cushion",
-            target_amount=round(user.monthly_income * 1.5, 2),
-            current_amount=round(user.monthly_income * 0.5, 2),
-            target_date=datetime.utcnow() + timedelta(days=120),
+            title="3-Month Emergency Fund",
+            target_amount=round(user.monthly_income * 3.0, 2),
+            current_amount=round(user.monthly_income * 1.0, 2),
+            target_date=datetime.utcnow() + timedelta(days=180),
             category="Emergency",
             status="active"
         ),
         Goal(
             user_id=user.id,
-            title="Annual Holiday Trip",
-            target_amount=2500.0,
-            current_amount=800.0,
-            target_date=datetime.utcnow() + timedelta(days=180),
+            title="Goa / Kerala Vacation",
+            target_amount=round(user.monthly_income * 0.6, 2),
+            current_amount=round(user.monthly_income * 0.25, 2),
+            target_date=datetime.utcnow() + timedelta(days=120),
             category="Vacation",
             status="active"
         )

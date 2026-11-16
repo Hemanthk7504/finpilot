@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { UploadCloud, FileText, CheckCircle2, AlertTriangle, Download, Loader2, X, Check } from "lucide-react";
 import { uploadBankStatement } from "../services/api";
+import { formatINR } from "../utils/currency";
 
 export default function StatementUploader({ onUploadSuccess, isModal = false, onClose = null }) {
   const [isDragging, setIsDragging] = useState(false);
@@ -131,7 +132,7 @@ export default function StatementUploader({ onUploadSuccess, isModal = false, on
                 <span className="text-indigo-400 font-bold">Click to browse</span> or drag and drop your statement
               </p>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                Supports Chase, Bank of America, Wells Fargo, and standard CSV & PDF extracts
+                Supports PhonePe, Google Pay (GPay), Paytm, BHIM, CRED, and all Indian Bank CSV &amp; PDF statements
               </p>
             </div>
           </div>
@@ -161,11 +162,11 @@ export default function StatementUploader({ onUploadSuccess, isModal = false, on
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-emerald-500/20 text-xs text-slate-300">
             <div>
               <span className="text-slate-400 block text-[10px]">Credits (Inflows)</span>
-              <strong className="text-emerald-400">${uploadResult.total_inflow?.toFixed(2)}</strong>
+              <strong className="text-emerald-400 font-numeric">{formatINR(uploadResult.total_inflow)}</strong>
             </div>
             <div>
               <span className="text-slate-400 block text-[10px]">Debits (Outflows)</span>
-              <strong className="text-rose-400">${uploadResult.total_outflow?.toFixed(2)}</strong>
+              <strong className="text-rose-400 font-numeric">{formatINR(uploadResult.total_outflow)}</strong>
             </div>
             <div>
               <span className="text-slate-400 block text-[10px]">Anomalies Flagged</span>

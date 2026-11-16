@@ -89,7 +89,7 @@ def test_get_forecast_endpoint():
 
 def test_chat_advisor_endpoint():
     with TestClient(app) as client:
-        payload = {"message": "Can I afford a $500 laptop next month?"}
+        payload = {"message": "Can I afford a ₹45,000 laptop next month?"}
         res = client.post("/api/v1/advisor/chat", json=payload)
         assert res.status_code == 200
         data = res.json()

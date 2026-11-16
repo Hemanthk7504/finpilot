@@ -1,0 +1,11 @@
+Date,Activity,Source/Destination,Wallet Txn ID,Debit,Credit,Status
+15-11-2026,Paid to Zomato,HDFC Bank,PTM987123456,580.00,,SUCCESS
+14-11-2026,Money sent to Amit Kumar,Paytm Payments Bank,PTM876543210,1200.00,,SUCCESS
+13-11-2026,Paid to Zepto Groceries,HDFC Bank,PTM765432109,640.00,,SUCCESS
+12-11-2026,Bill payment for BESCOM Electricity,Paytm Wallet,PTM654321098,1980.00,,SUCCESS
+11-11-2026,Paid to Shell Petrol Pump,HDFC Bank,PTM543210987,2500.00,,SUCCESS
+10-11-2026,Cashback from Paytm,Paytm Wallet,PTM432109876,,50.00,SUCCESS
+09-11-2026,Received from Suresh Patel,State Bank of India,PTM321098765,,4500.00,SUCCESS
+08-11-2026,Paid to Fastag Toll Plaza,Paytm Wallet,PTM210987654,180.00,,SUCCESS
+07-11-2026,Paid to BookMyShow Cinema,HDFC Bank,PTM109876543,760.00,,SUCCESS
+06-11-2026,Failed Transfer Attempt,HDFC Bank,PTM098765432,500.00,,FAILED

@@ -258,6 +258,43 @@ class TransactionCategorizer:
             ("ATM WITHDRAWAL INTERCHANGE DECLINE FEE", "Bank Charges & Fees"),
             ("CHEQUE BOOK ISSUANCE CHARGES WITH GST", "Bank Charges & Fees"),
             ("ECS / NACH BOUNCE RETURN PENALTY CHARGES", "Bank Charges & Fees"),
+
+            # PhonePe, Paytm, Google Pay, and UPI Transactions
+            ("Paid to Swiggy online food delivery", "Dining & Food Delivery"),
+            ("Paid to Zomato Limited dinner order", "Dining & Food Delivery"),
+            ("UPI/DR/431789234125/Swiggy/HDFC", "Dining & Food Delivery"),
+            ("UPI-ZOMATO-PAYTMQR28100505@PAYTM", "Dining & Food Delivery"),
+            ("Paid to Blinkit Commerce daily groceries", "Groceries"),
+            ("Paid to Zepto instant delivery milk bread", "Groceries"),
+            ("UPI/BLINKIT/INSTANT GROCERY BANGALORE", "Groceries"),
+            ("Paid to BESCOM Electricity bill payment", "Utilities & Bills"),
+            ("Paid to Reliance Jio mobile recharge", "Utilities & Bills"),
+            ("Paid to Airtel Broadband billdesk", "Utilities & Bills"),
+            ("UPI/P2M/431456781234/BESCOM/ICICI", "Utilities & Bills"),
+            ("Paid to Uber India ride", "Transportation & Fuel"),
+            ("Paid to Ola Cabs auto ride", "Transportation & Fuel"),
+            ("Paid to Rapido bike taxi ride", "Transportation & Fuel"),
+            ("Paid to Indian Oil fuel petrol bunk", "Transportation & Fuel"),
+            ("Paid to Apollo Pharmacy healthcare medicines", "Healthcare & Medical"),
+            ("Paid to Tata 1mg lab test diagnostic", "Healthcare & Medical"),
+            ("Paid to Amazon Seller retail shopping", "Shopping & Electronics"),
+            ("Paid to Flipkart Internet marketplace", "Shopping & Electronics"),
+            ("Paid to Myntra Designs fashion clothing", "Shopping & Electronics"),
+            ("Paid to Netflix India entertainment streaming", "Entertainment & Subscriptions"),
+            ("AutoPay to Spotify Music Premium", "Entertainment & Subscriptions"),
+            ("Paid to BookMyShow movie tickets cinema", "Entertainment & Subscriptions"),
+            ("Paid to Zerodha Broking equity investments", "Investments & Savings"),
+            ("Paid to Groww Nextbillion Technology mutual fund SIP", "Investments & Savings"),
+            ("Paid to CRED credit card bill settlement", "Loans & Debt EMI"),
+            ("Cashback from PhonePe promotional reward", "Refunds & Cashback"),
+            ("Paytm Wallet Cashback credit", "Refunds & Cashback"),
+            ("Received from Ramesh Kumar UPI transfer", "Salary & Income"),
+
+            # Duplicate Transaction Records for Testing & Calibration
+            ("Paid to Swiggy online food delivery", "Dining & Food Delivery"),
+            ("Paid to Blinkit Commerce daily groceries", "Groceries"),
+            ("Paid to Uber India ride", "Transportation & Fuel"),
+            ("UPI/DR/431789234125/Swiggy/HDFC", "Dining & Food Delivery")
         ]
 
     def _train_pipeline(self):

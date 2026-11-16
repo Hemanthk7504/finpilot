@@ -1,15 +1,16 @@
 import React, { useState } from "react";
-import { Landmark, TrendingUp, ArrowUpRight, DollarSign, PieChart, ShieldCheck } from "lucide-react";
+import { Landmark, TrendingUp, ArrowUpRight, PieChart, ShieldCheck } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
+import { formatINR } from "../utils/currency";
 
 export default function NetWorthTracker({ overview }) {
-  const [cash, setCash] = useState(overview?.current_balance || 5420);
-  const [investments, setInvestments] = useState(14800);
+  const [cash, setCash] = useState(overview?.current_balance || 45200);
+  const [investments, setInvestments] = useState(185000);
   const [property, setProperty] = useState(0);
 
-  const [creditDebt, setCreditDebt] = useState(1200);
-  const [studentDebt, setStudentDebt] = useState(8500);
-  const [autoDebt, setAutoDebt] = useState(4200);
+  const [creditDebt, setCreditDebt] = useState(12500);
+  const [studentDebt, setStudentDebt] = useState(65000);
+  const [autoDebt, setAutoDebt] = useState(42000);
 
   const totalAssets = cash + investments + property;
   const totalLiabilities = creditDebt + studentDebt + autoDebt;
@@ -18,11 +19,11 @@ export default function NetWorthTracker({ overview }) {
 
   // 6-Month Projected Trend Data
   const trendData = [
-    { month: "May", netWorth: netWorth - 5200, assets: totalAssets - 4000, debt: totalLiabilities + 1200 },
-    { month: "Jun", netWorth: netWorth - 4100, assets: totalAssets - 3100, debt: totalLiabilities + 1000 },
-    { month: "Jul", netWorth: netWorth - 3200, assets: totalAssets - 2400, debt: totalLiabilities + 800 },
-    { month: "Aug", netWorth: netWorth - 2000, assets: totalAssets - 1500, debt: totalLiabilities + 500 },
-    { month: "Sep", netWorth: netWorth - 900, assets: totalAssets - 600, debt: totalLiabilities + 300 },
+    { month: "May", netWorth: netWorth - 45000, assets: totalAssets - 35000, debt: totalLiabilities + 10000 },
+    { month: "Jun", netWorth: netWorth - 35000, assets: totalAssets - 28000, debt: totalLiabilities + 7000 },
+    { month: "Jul", netWorth: netWorth - 25000, assets: totalAssets - 20000, debt: totalLiabilities + 5000 },
+    { month: "Aug", netWorth: netWorth - 15000, assets: totalAssets - 12000, debt: totalLiabilities + 3000 },
+    { month: "Sep", netWorth: netWorth - 8000, assets: totalAssets - 6000, debt: totalLiabilities + 2000 },
     { month: "Current", netWorth: netWorth, assets: totalAssets, debt: totalLiabilities },
   ];
 
@@ -41,7 +42,7 @@ export default function NetWorthTracker({ overview }) {
               </span>
             </h3>
             <p className="text-xs text-slate-400">
-              Complete Asset vs. Liability accounting: Liquid cash, stocks, and debt obligations.
+              Complete Asset vs. Liability accounting: Liquid cash, stocks, mutual funds, and debt obligations.
             </p>
           </div>
         </div>
@@ -50,7 +51,7 @@ export default function NetWorthTracker({ overview }) {
           <div>
             <span className="text-[10px] uppercase font-bold text-slate-400">Total Net Worth</span>
             <p className="text-xl font-black text-emerald-400 font-numeric">
-              ${netWorth.toLocaleString()}
+              {formatINR(netWorth)}
             </p>
           </div>
         </div>
@@ -60,30 +61,27 @@ export default function NetWorthTracker({ overview }) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
           <span className="text-[10px] uppercase font-bold text-slate-400">Total Assets</span>
-          <p className="text-2xl font-extrabold text-white font-numeric mt-1">${totalAssets.toLocaleString()}</p>
-          <span className="text-[11px] text-emerald-400">Cash + Investments</span>
+          <p className="text-2xl font-extrabold text-white font-numeric mt-1">{formatINR(totalAssets)}</p>
+          <span className="text-[11px] text-emerald-400">Cash + Demat Investments</span>
         </div>
 
         <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
           <span className="text-[10px] uppercase font-bold text-slate-400">Total Liabilities</span>
-          <p className="text-2xl font-extrabold text-rose-400 font-numeric mt-1">${totalLiabilities.toLocaleString()}</p>
-          <span className="text-[11px] text-rose-400">Credit + Student Loans</span>
+          <p className="text-2xl font-extrabold text-rose-400 font-numeric mt-1">{formatINR(totalLiabilities)}</p>
+          <span className="text-[11px] text-rose-400">Credit Card + Loan EMIs</span>
         </div>
 
         <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
           <span className="text-[10px] uppercase font-bold text-slate-400">Debt-to-Asset Ratio</span>
-          <p className="text-2xl font-extrabold text-indigo-400 font-numeric mt-1">{debtToAsset}%</p>
-          <span className="text-[11px] text-slate-400">{debtToAsset <= 40 ? "Healthy Solvency ✓" : "Leveraged"}</span>
+          <p className="text-2xl font-extrabold text-indigo-300 font-numeric mt-1">{debtToAsset}%</p>
+          <span className="text-[11px] text-slate-400">{debtToAsset < 30 ? "Healthy (<30%)" : "High Leverage"}</span>
         </div>
       </div>
 
-      {/* Trajectory Area Chart */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 space-y-3">
-        <h4 className="text-xs font-bold text-white flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-emerald-400" />
-          <span>6-Month Net Worth Trajectory</span>
-        </h4>
-        <div className="h-44 w-full">
+      {/* Net Worth Chart */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 space-y-4">
+        <h4 className="text-xs font-bold text-slate-300">6-Month Wealth Trajectory</h4>
+        <div className="h-56 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={trendData}>
               <defs>
@@ -93,9 +91,10 @@ export default function NetWorthTracker({ overview }) {
                 </linearGradient>
               </defs>
               <XAxis dataKey="month" stroke="#64748B" fontSize={11} />
-              <YAxis stroke="#64748B" fontSize={11} tickFormatter={(v) => `$${v / 1000}k`} />
+              <YAxis stroke="#64748B" fontSize={11} tickFormatter={(v) => `₹${Math.round(v / 1000)}k`} />
               <Tooltip
                 contentStyle={{ backgroundColor: "#0F172A", borderColor: "#334155", borderRadius: "12px", fontSize: "11px" }}
+                formatter={(val) => [formatINR(val), "Net Worth"]}
               />
               <Area type="monotone" dataKey="netWorth" stroke="#10B981" strokeWidth={2.5} fill="url(#netWorthGrad)" />
             </AreaChart>
@@ -107,24 +106,24 @@ export default function NetWorthTracker({ overview }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
         {/* Assets Form */}
         <div className="rounded-2xl border border-emerald-500/20 bg-slate-950/40 p-4 space-y-3">
-          <h4 className="text-xs font-bold text-emerald-400">Asset Accounts ($)</h4>
+          <h4 className="text-xs font-bold text-emerald-400">Asset Accounts (₹)</h4>
           <div className="space-y-2 text-xs">
             <div className="flex justify-between items-center">
-              <span className="text-slate-300">Liquid Checking &amp; Savings:</span>
+              <span className="text-slate-300">Liquid Savings Account:</span>
               <input
                 type="number"
                 value={cash}
                 onChange={(e) => setCash(Number(e.target.value))}
-                className="w-28 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1 text-right text-white font-numeric"
+                className="w-32 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1 text-right text-white font-numeric"
               />
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-slate-300">Brokerage &amp; Retirement:</span>
+              <span className="text-slate-300">Mutual Funds &amp; Stocks:</span>
               <input
                 type="number"
                 value={investments}
                 onChange={(e) => setInvestments(Number(e.target.value))}
-                className="w-28 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1 text-right text-white font-numeric"
+                className="w-32 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1 text-right text-white font-numeric"
               />
             </div>
           </div>
@@ -132,24 +131,24 @@ export default function NetWorthTracker({ overview }) {
 
         {/* Liabilities Form */}
         <div className="rounded-2xl border border-rose-500/20 bg-slate-950/40 p-4 space-y-3">
-          <h4 className="text-xs font-bold text-rose-400">Liability Accounts ($)</h4>
+          <h4 className="text-xs font-bold text-rose-400">Liability Accounts (₹)</h4>
           <div className="space-y-2 text-xs">
             <div className="flex justify-between items-center">
-              <span className="text-slate-300">Credit Card Balance:</span>
+              <span className="text-slate-300">Credit Card Outstanding:</span>
               <input
                 type="number"
                 value={creditDebt}
                 onChange={(e) => setCreditDebt(Number(e.target.value))}
-                className="w-28 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1 text-right text-white font-numeric"
+                className="w-32 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1 text-right text-white font-numeric"
               />
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-slate-300">Student &amp; Auto Loans:</span>
+              <span className="text-slate-300">Personal &amp; Car Loan EMI:</span>
               <input
                 type="number"
-                value={studentDebt + autoDebt}
-                onChange={(e) => setStudentDebt(Number(e.target.value))}
-                className="w-28 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1 text-right text-white font-numeric"
+                value={autoDebt}
+                onChange={(e) => setAutoDebt(Number(e.target.value))}
+                className="w-32 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1 text-right text-white font-numeric"
               />
             </div>
           </div>

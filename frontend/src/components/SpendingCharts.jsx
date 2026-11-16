@@ -1,6 +1,7 @@
 import React from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { PieChart as PieIcon, Layers, TrendingUp, CheckCircle } from "lucide-react";
+import { formatINR } from "../utils/currency";
 
 export default function SpendingCharts({ categoryData }) {
   const categories = categoryData?.categories || [];
@@ -30,7 +31,7 @@ export default function SpendingCharts({ categoryData }) {
         <div className="rounded-xl border border-slate-700 bg-slate-900/95 p-3 shadow-xl text-xs">
           <p className="font-semibold text-white">{data.name}</p>
           <p className="text-indigo-400 font-bold mt-1">
-            ${data.value.toLocaleString()} <span className="text-slate-400 font-normal">({pct}%)</span>
+            {formatINR(data.value)} <span className="text-slate-400 font-normal">({pct}%)</span>
           </p>
         </div>
       );
@@ -48,7 +49,7 @@ export default function SpendingCharts({ categoryData }) {
               <PieIcon className="h-4 w-4 text-indigo-400" />
               Category Outflow Distribution
             </h3>
-            <p className="text-xs text-slate-400">Total Analyzed Outflow: ${totalSpend.toLocaleString()}</p>
+            <p className="text-xs text-slate-400">Total Analyzed Outflow: {formatINR(totalSpend)}</p>
           </div>
         </div>
 
@@ -90,7 +91,7 @@ export default function SpendingCharts({ categoryData }) {
                   <span className="text-slate-300 truncate">{cat.name}</span>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="font-semibold text-white">${cat.amount.toLocaleString()}</span>
+                  <span className="font-semibold text-white">{formatINR(cat.amount)}</span>
                   <span className="text-slate-400 text-[10px] ml-1.5">{cat.percentage}%</span>
                 </div>
               </div>

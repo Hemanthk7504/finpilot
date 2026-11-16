@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { ShieldCheck, AlertTriangle, ShieldAlert, Sparkles, TrendingUp, DollarSign } from "lucide-react";
+import { ShieldCheck, AlertTriangle, ShieldAlert, Sparkles, TrendingUp } from "lucide-react";
 import { fetchEmergencyRunway } from "../services/api";
+import { formatINR } from "../utils/currency";
 
 export default function EmergencyRunwayCard({ overview }) {
   const [data, setData] = useState(null);
@@ -85,23 +86,23 @@ export default function EmergencyRunwayCard({ overview }) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
         <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
           <span className="text-[10px] text-slate-400 uppercase font-semibold">Essential Burn Rate</span>
-          <p className="text-sm font-bold text-white font-numeric">${data.monthly_essential_burn.toLocaleString()}/mo</p>
+          <p className="text-sm font-bold text-white font-numeric">{formatINR(data.monthly_essential_burn)}/mo</p>
           <span className="text-[10px] text-slate-500">Rent, Food, Utilities, Debt</span>
         </div>
 
         <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
           <span className="text-[10px] text-slate-400 uppercase font-semibold">3-Month Target</span>
-          <p className="text-sm font-bold text-indigo-400 font-numeric">${data.target_3m.toLocaleString()}</p>
+          <p className="text-sm font-bold text-indigo-400 font-numeric">{formatINR(data.target_3m)}</p>
           <span className="text-[10px] text-slate-500">
-            {data.gap_to_3m > 0 ? `Gap: $${data.gap_to_3m.toLocaleString()}` : "Fully Achieved ✓"}
+            {data.gap_to_3m > 0 ? `Gap: ${formatINR(data.gap_to_3m)}` : "Fully Achieved ✓"}
           </span>
         </div>
 
         <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
           <span className="text-[10px] text-slate-400 uppercase font-semibold">6-Month Fortress Target</span>
-          <p className="text-sm font-bold text-emerald-400 font-numeric">${data.target_6m.toLocaleString()}</p>
+          <p className="text-sm font-bold text-emerald-400 font-numeric">{formatINR(data.target_6m)}</p>
           <span className="text-[10px] text-slate-500">
-            {data.gap_to_6m > 0 ? `Gap: $${data.gap_to_6m.toLocaleString()}` : "Fully Achieved ✓"}
+            {data.gap_to_6m > 0 ? `Gap: ${formatINR(data.gap_to_6m)}` : "Fully Achieved ✓"}
           </span>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { X, Printer, Download, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { fetchReportSummary } from "../services/api";
+import { formatINR } from "../utils/currency";
 
 export default function ReportsModal({ isOpen, onClose }) {
   const [report, setReport] = useState(null);
@@ -62,11 +63,11 @@ export default function ReportsModal({ isOpen, onClose }) {
               </div>
               <div>
                 <span className="text-slate-400 block text-[11px]">Monthly Inflow</span>
-                <strong className="text-emerald-400 text-sm">${report?.financial_kpis?.monthly_inflow.toLocaleString()}</strong>
+                <strong className="text-emerald-400 text-sm font-numeric">{formatINR(report?.financial_kpis?.monthly_inflow)}</strong>
               </div>
               <div>
                 <span className="text-slate-400 block text-[11px]">Monthly Outflow</span>
-                <strong className="text-rose-400 text-sm">${report?.financial_kpis?.monthly_outflow.toLocaleString()}</strong>
+                <strong className="text-rose-400 text-sm font-numeric">{formatINR(report?.financial_kpis?.monthly_outflow)}</strong>
               </div>
               <div>
                 <span className="text-slate-400 block text-[11px]">Net Savings Rate</span>
@@ -93,7 +94,7 @@ export default function ReportsModal({ isOpen, onClose }) {
                 {report?.category_spending?.slice(0, 6).map((cat, i) => (
                   <div key={i} className="flex items-center justify-between py-1 border-b border-slate-800/50">
                     <span className="text-slate-300">{cat.name}</span>
-                    <strong className="text-white font-mono">${cat.amount.toLocaleString()}</strong>
+                    <strong className="text-white font-numeric">{formatINR(cat.amount)}</strong>
                   </div>
                 ))}
               </div>

@@ -63,7 +63,7 @@ def get_report_summary(
         "user_profile": {
             "name": user.name if user else "Alex Mercer",
             "email": user.email if user else "alex.mercer@finpilot.io",
-            "currency": user.currency if user else "$",
+            "currency": (user.currency if user and user.currency and user.currency != "$" else "₹"),
             "monthly_income": income
         },
         "financial_kpis": {
