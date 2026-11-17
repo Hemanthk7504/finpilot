@@ -57,7 +57,16 @@ class AIAdvisorService:
         msg_lower = clean_msg.lower()
         history = history or []
 
-        # 1. Attempt Gemini 1.5 / 2.0 Flash if API Key is set
+        # 1. Lightweight Hugging Face Conversational AI Engine (FLAN-T5 & MiniLM Semantic RAG)
+        try:
+            from backend.app.services.hf_chatbot import HuggingFaceChatbot
+            hf_res = HuggingFaceChatbot.generate_reply(clean_msg, user_context, history)
+            if hf_res and hf_res.get("reply"):
+                return hf_res
+        except Exception:
+            pass
+
+        # 2. Attempt Gemini 1.5 / 2.0 Flash if API Key is set
         if self.gemini_key:
             try:
                 import google.generativeai as genai
@@ -90,7 +99,7 @@ class AIAdvisorService:
             except Exception:
                 pass  # Gracefully fall through to comprehensive offline intelligence engine
 
-        # 2. Comprehensive Open-Ended Financial Reasoning Engine
+        # 3. Comprehensive Open-Ended Financial Reasoning Engine
         return self._evaluate_financial_query(clean_msg, user_context, history)
 
     def _build_gemini_prompt(self, context: Dict[str, Any]) -> str:

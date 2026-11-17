@@ -103,11 +103,12 @@ export default function AICoPilotDrawer({ isOpen, onClose, overview, currentUser
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-sm tracking-tight">FinPilot AI Advisor</h3>
-                <span className="rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[10px] font-bold px-2 py-0.2 uppercase">
-                  GPT-Ready
+                <span className="rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 flex items-center gap-1">
+                  <Sparkles className="h-3 w-3 text-amber-400" />
+                  <span>Hugging Face AI</span>
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">Open-Ended Conversational Wealth Intelligence</p>
+              <p className="text-[11px] text-slate-400">FLAN-T5 &amp; MiniLM Semantic RAG Intelligence</p>
             </div>
           </div>
 
@@ -269,7 +270,10 @@ export default function AICoPilotDrawer({ isOpen, onClose, overview, currentUser
           </div>
           <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-400 px-1">
             <span>Press Enter to send, Shift+Enter for new line</span>
-            <span>FinPilot MAX Co-Pilot</span>
+            <span className="flex items-center gap-1 text-amber-400/90 font-medium">
+              <Sparkles className="h-3 w-3" />
+              <span>Hugging Face FLAN-T5</span>
+            </span>
           </div>
         </div>
       </div>
